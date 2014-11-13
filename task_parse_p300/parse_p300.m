@@ -1,8 +1,8 @@
-addpath('/u/yichao/lens/utils/p300soft');
+addpath('/u/yichao/warp/git_repository/utils/p300soft');
 setpath;
 
-input_dir = '/scratch/cluster/yichao/anomaly_compression/data/eeg/P300/';
-output_dir = '/scratch/cluster/yichao/anomaly_compression/processed_data/subtask_parse_p300/';
+input_dir = '/scratch/cluster/yichao/warp/data/eeg/P300/';
+output_dir = '/scratch/cluster/yichao/warp/processed_data/task_parse_p300/';
 subjects = [1, 2, 3, 4, 6, 7, 8, 9];
 sessions = [1:4];
 

@@ -9,7 +9,7 @@
 function [X, r, bin] = get_trace_p300(opt)
     [subject, session, img_idx, mat_type] = get_p300_opt(opt);
 
-    inputdir = '/scratch/cluster/yichao/warp/processed_data/subtask_parse_p300/';
+    inputdir = '/scratch/cluster/yichao/warp/processed_data/task_parse_p300/';
     num_chennels = 32;
     % subjects = [1 2 3 4 6 7 8 9];
     % sessions = [1:4];

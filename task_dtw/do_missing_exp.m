@@ -30,8 +30,8 @@ function [r] = do_missing_exp(trace_name, trace_opt, ...
     rand('seed', seed);
     randn('seed', seed);
 
-    output_dir = '../../processed_data/subtask_dtw/do_missing_exp/';
-    % output_dir = '/u/yichao/warp/condor_data/subtask_dtw/condor/do_missing_exp/';
+    output_dir = '../../processed_data/task_dtw/do_missing_exp/';
+    % output_dir = '/u/yichao/warp/condor_data/task_dtw/condor/do_missing_exp/';
 
 
     %% --------------------------
