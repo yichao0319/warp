@@ -1,4 +1,7 @@
-%% get_trace: function description
+%% get_trace:
+%% - opt
+%%   > 4sq: num_loc, num_rep, loc_type
+%%   > p300: subject, session, img_idx, mat_type
 function [mat, r, bin] = get_trace(trace_name, opt)
     test_time = 100;
 

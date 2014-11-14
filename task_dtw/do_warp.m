@@ -1,19 +1,23 @@
 %% do_warp(X_cluster, warp_method)
-function X_warp = do_warp(X_cluster, warp_method, opt, M_cluster)
+function [X_warp, other_warp] = do_warp(X_cluster, warp_method, opt, other_mat)
     DEBUG_TIME = 0;
 
     t1 = tic;
     if strcmp(warp_method, 'dtw')
         fprintf(['  do dtw: ' opt '\n']);
-        X_warp = do_dtw(X_cluster, opt);
+        [X_warp, other_warp] = do_dtw(X_cluster, opt, other_mat);
 
     elseif strcmp(warp_method, 'shift')
         fprintf('  do shift\n');
-        X_warp = do_shift(X_cluster);
+        [X_warp, other_warp] = do_shift(X_cluster, other_mat);
 
     elseif strcmp(warp_method, 'stretch')
         fprintf('  do stretch\n');
-        X_warp = do_stretch(X_cluster);
+        [X_warp, other_warp] = do_stretch(X_cluster, other_mat);
+    elseif strcmp(warp_method, 'na')
+        fprintf('  no warp\n');
+        X_warp = X_cluster;
+        other_warp = other_mat;
     else
         error(['wrong warp method: ' warp_method]);
     end

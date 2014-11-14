@@ -3,7 +3,7 @@ function [X_est] = do_estimate(X, M, esti_method, est_opt)
     [r] = get_est_opt(est_opt);
 
     if strcmp(esti_method, 'lens')
-        [X_est, x, y, z] = wrap_lens(X, M, r0);
+        [X_est, x, y, z] = wrap_lens(X, M, r);
 
     elseif strcmp(esti_method, 'SRMF')
         epsilon = 0.01;
@@ -11,6 +11,7 @@ function [X_est] = do_estimate(X, M, esti_method, est_opt)
         alpha   = 10;
         lambda  = 0.01;
 
+        [A, b] = XM2Ab(X, M);
         config = ConfigSRTF(A, b, X, M, size(X), r, r, epsilon, true, period);
         [u4, v4, w4] = SRTF(X, r, M, config, alpha, lambda, 50);
 
@@ -59,11 +60,20 @@ function [r] = get_est_opt(opt)
         eval([char(this_opt) ';']);
     end
 
-    if num_seg < 0, num_seg = 1; end
 end
 
 
 function [X_est,x,y,z] = wrap_lens(X, M, r0)
+    addpath('/u/yichao/lens/utils/lens');
+
+
+    % tmpX = cluster2mat(X);
+    % tmpM = cluster2mat(M);
+    % tmpX(~tmpM) = 0;
+    % find(isnan(tmpX))
+    % input('.............')
+
+
     %% --------------------
     %% Missing values
     %% --------------------
@@ -88,10 +98,14 @@ function [X_est,x,y,z] = wrap_lens(X, M, r0)
     Q = toeplitz(CC,RR);
     K = P*zeros(m,n)*Q';
 
-    [x,y,z,w,enable_B,sig,gamma] = lens3(ts,this_r,A,B,C,E,P,Q,K,[],soft,rho);
+    X(E) = 0;
+
+    [x,y,z,w,enable_B,sig,gamma] = lens3(X,this_r,A,B,C,E,P,Q,K,[],soft,rho);
     if (enable_B)
         X_est = x+y;
     else
         X_est = x;
     end
 end
+
+

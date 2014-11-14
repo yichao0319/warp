@@ -10,6 +10,7 @@ function [X_drop, M] = do_drop(X, ElemFrac, LossRate, ElemMode, LossMode, BurstS
     nt = size(X, 2);
 
     M = DropValues(nr, nc, nt, ElemFrac, LossRate, ElemMode, LossMode, BurstSize);
+    M = squeeze(M);
     X_drop = X;
     X_drop(~M) = NaN;
 end

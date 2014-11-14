@@ -37,14 +37,20 @@ double corrcoef_c(double *ts1, double *ts2, int n)
     int i; 
     double xy, xsquare, ysquare, xsum, ysum, xysum, xsqr_sum, ysqr_sum;
     double num, deno;
+    int cnt;
 
     xsum = 0;
     ysum = 0;
     xysum = 0;
     xsqr_sum = 0;
     ysqr_sum = 0;
+    cnt = 0;
 
     for (i = 0; i < n; i ++) {
+        if(mxIsNaN(ts1[i]) || mxIsNaN(ts2[i])) {
+            continue;
+        }
+        cnt ++;
         xy = ts1[i] * ts2[i];
         xsquare = ts1[i] * ts1[i];
         ysquare = ts2[i] * ts2[i];
@@ -55,8 +61,8 @@ double corrcoef_c(double *ts1, double *ts2, int n)
         ysqr_sum += ysquare;
     }
 
-    num = (n * xysum) - (xsum * ysum);
-    deno = (n * xsqr_sum - xsum * xsum) * (n * ysqr_sum - ysum * ysum);
+    num = (cnt * xysum) - (xsum * ysum);
+    deno = (cnt * xsqr_sum - xsum * xsum) * (cnt * ysqr_sum - ysum * ysum);
 
     return (num / sqrt(deno));
 }

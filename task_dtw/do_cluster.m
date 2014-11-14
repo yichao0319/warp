@@ -1,10 +1,11 @@
 %% do_cluster: function description
-function [X_cluster, M_cluster] = do_cluster(X, num_cluster, method, M)
+function [X_cluster, other_cluster] = do_cluster(X, num_cluster, method, other_mat)
 
     if nargin < 2, num_cluster = 1; end
     if nargin < 3, method = 'kmeans'; end
-    if nargin < 4, M = ones(size(X)); end
 
+    other_cluster = {};
+    
 
     if num_cluster == Inf
         %% ------------------
@@ -44,7 +45,14 @@ function [X_cluster, M_cluster] = do_cluster(X, num_cluster, method, M)
         idx = find(cluster_idx == uniq_cluster_idx(ci));
         for iidx = 1:length(idx)
             X_cluster{ci}{iidx} = X{idx(iidx)};
-            M_cluster{ci}{iidx} = M{idx(iidx)};
+            
+            % M_cluster{ci}{iidx} = M{idx(iidx)};
+            if nargin >= 4
+                % other_cluster = {};
+                for oi = 1:length(other_mat)
+                    other_cluster{oi}{ci}{iidx} = other_mat{oi}{idx(iidx)};
+                end
+            end
         end
     end
 end

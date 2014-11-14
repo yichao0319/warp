@@ -1,11 +1,19 @@
 %% do_stretch: function description
-function X_warp = do_stretch(X_cluster)
+function [X_warp, other_warp] = do_stretch(X_cluster, other_mat)
     DEBUG_TIME = 0;
+
+    other_warp = {};
 
     for ci = 1:length(X_cluster)
         if length(X_cluster{ci}) == 1
             X_warp{ci} = X_cluster{ci};
-            continue
+            % M_warp{ci} = M_cluster{ci};
+            if nargin >= 2
+                for oi = 1:length(other_mat)
+                    other_warp{oi}{ci} = other_mat{oi}{ci};
+                end
+            end
+            continue;
         end
 
         for tsi = 2:length(X_cluster{ci})
@@ -26,7 +34,20 @@ function X_warp = do_stretch(X_cluster)
         end
         
         t1 = tic;
-        X_warp{ci} = align_cluster(X_cluster{ci}, ws);
+        % [X_warp{ci}, M_warp{ci}] = align_cluster(X_cluster{ci}, ws, M_cluster{ci});
+        tmp_other_mat = {};
+        if nargin >= 2
+            for oi = 1:length(other_mat)
+                tmp_other_mat{oi} = other_mat{oi}{ci};
+            end
+        end
+        [X_warp{ci}, tmp_other_warp] = align_cluster(X_cluster{ci}, ws, tmp_other_mat);
+        if nargin >= 2
+            for oi = 1:length(tmp_other_warp)
+                other_warp{oi}{ci} = tmp_other_warp{oi};
+            end
+        end
+        
         if DEBUG_TIME, fprintf('[TIME] len:%d, time=%f\n', size(ws{2},1), toc(t1)); end
     end
 end

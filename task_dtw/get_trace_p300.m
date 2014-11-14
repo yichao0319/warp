@@ -44,7 +44,7 @@ function [X, r, bin] = get_trace_p300(opt)
     end
 
     X = num2cell(tmp1, 2);
-    r = 10;
+    r = 32;
     bin = 1;
 end
 

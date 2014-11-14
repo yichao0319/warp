@@ -52,7 +52,8 @@ function [ts1_idx, ts2_idx, best_coeff] = find_best_sub_shift_order(ts1, ts2)
         pad_ts2 = [pad_before, ts2, pad_after];
         pad_ts2_idx = [pad_before_idx, 1:length(ts2), pad_after_idx];
 
-        this_coeff = corrcoef(ts1', pad_ts2');
+        % this_coeff = corrcoef(ts1', pad_ts2');
+        this_coeff = my_corrcoef(ts1', pad_ts2');
         this_coeff = this_coeff(1,2);
 
         if this_coeff > best_coeff

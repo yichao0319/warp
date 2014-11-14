@@ -1,5 +1,7 @@
 %% align_cluster: function description
-function [align_ts] = align_cluster(ts, ws)
+function [align_ts, align_other] = align_cluster(ts, ws, other_mat)
+    align_other = {};
+    
     for ti = 1:length(ts{1})
         max_num{ti} = 0;
         for tsi = 2:length(ts)
@@ -41,6 +43,12 @@ function [align_ts] = align_cluster(ts, ws)
     end
 
     align_ts{1} = ts{1}(ws{2}(:,1));
+    % align_M{1}  = M{1}(ws{2}(:,1));
+    if nargin >= 3
+        for oi = 1:length(other_mat)
+            align_other{oi}{1} = other_mat{oi}{1}(ws{2}(:,1));
+        end
+    end
 
     for tsi = 2:length(ts)
         if nnz(ws{2}(:,1) - ws{tsi}(:,1)) > 0
@@ -48,5 +56,11 @@ function [align_ts] = align_cluster(ts, ws)
         end
 
         align_ts{tsi} = ts{tsi}(ws{tsi}(:,2));
+        % align_M{tsi}  = M{tsi}(ws{tsi}(:,2));
+        if nargin >= 3
+            for oi = 1:length(other_mat)
+                align_other{oi}{tsi} = other_mat{oi}{tsi}(ws{tsi}(:,2));
+            end
+        end
     end
 end

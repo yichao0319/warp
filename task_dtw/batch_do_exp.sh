@@ -1,33 +1,18 @@
-#!/bin/bash
-# function do_exp(trace_name, trace_opt1, ...
-#                 rank_num_seg, rank_percentile, ...
-#                 num_cluster, cluster_method, ...
-#                 warp_method, warp_opt1, warp_opt2)
-matlab -r "do_exp('4sq', 10, 1, 0.8, Inf, 'kmeans', 'dtw', '', 1); exit;"
-matlab -r "do_exp('4sq', 10, 1, 0.8, 1, 'kmeans', 'dtw', 'dtw_c', 1); exit;"
-matlab -r "do_exp('4sq', 10, 1, 0.8, 1, 'kmeans', 'shift', '', 1); exit;"
-# matlab -r "do_exp('4sq', 10, 1, 0.8, 1, 'kmeans', 'stretch', '', 1); exit;"
-
-
-matlab -r "do_exp('abilene', 0, 1, 0.8, Inf, 'kmeans', 'dtw', '', 1); exit;"
-matlab -r "do_exp('abilene', 0, 1, 0.8, 1, 'kmeans', 'dtw', 'dtw_c', 1); exit;"
-matlab -r "do_exp('abilene', 0, 1, 0.8, 1, 'kmeans', 'shift', '', 1); exit;"
-# matlab -r "do_exp('abilene', 0, 1, 0.8, 1, 'kmeans', 'stretch', '', 1); exit;"
-
-matlab -r "do_exp('abilene', 0, 1, 0.8, 5, 'kmeans', 'dtw', 'dtw_c', 1); exit;"
-matlab -r "do_exp('abilene', 0, 1, 0.8, 5, 'kmeans', 'shift', '', 1); exit;"
-# matlab -r "do_exp('abilene', 0, 1, 0.8, 5, 'kmeans', 'stretch', '', 1); exit;"
-
-
-matlab -r "do_exp('geant', 0, 1, 0.8, Inf, 'kmeans', 'dtw', '', 1); exit;"
-matlab -r "do_exp('geant', 0, 1, 0.8, 1, 'kmeans', 'dtw', 'dtw_c', 1); exit;"
-matlab -r "do_exp('geant', 0, 1, 0.8, 1, 'kmeans', 'shift', '', 1); exit;"
-# matlab -r "do_exp('geant', 0, 1, 0.8, 1, 'kmeans', 'stretch', '', 1); exit;"
-
-matlab -r "do_exp('geant', 0, 1, 0.8, 5, 'kmeans', 'dtw', 'dtw_c', 1); exit;"
-matlab -r "do_exp('geant', 0, 1, 0.8, 5, 'kmeans', 'shift', '', 1); exit;"
-# matlab -r "do_exp('geant', 0, 1, 0.8, 5, 'kmeans', 'stretch', '', 1); exit;"
-
-matlab -r "do_exp('geant', 0, 1, 0.8, 10, 'kmeans', 'dtw', 'dtw_c', 1); exit;"
-matlab -r "do_exp('geant', 0, 1, 0.8, 10, 'kmeans', 'shift', '', 1); exit;"
-# matlab -r "do_exp('geant', 0, 1, 0.8, 10, 'kmeans', 'stretch', '', 1); exit;"
+## do_exp: 
+## - trace_opt
+##   > 4sq: num_loc, num_rep, loc_type
+##   > p300: subject, session, img_idx, mat_type
+## - rank_opt
+##   > percentile
+##   > num_seg
+##   > r_method
+##     > 1: fill in shorter clusters with 0s
+##     > 2: sum of the ranks of each cluster
+## - warp_opt
+##   > num_seg
+##
+## function [r] = do_exp(trace_name, trace_opt, ...
+##                rank_opt, ...
+##                num_cluster, cluster_method, ...
+##                warp_method, warp_opt)
+matlab -r "do_exp('test_sine_shift', 'na', 'percentile=0.8,num_seg=1,r_method=1', 1, 'kmeans', 'dtw', 'num_seg=1'); exit;"
