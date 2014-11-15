@@ -143,8 +143,8 @@ function [mat, r, bin] = get_trace(trace_name, opt)
         r = 300;
         bin = 1*60;
 
-    elseif strcmp(trace_name, 'speach')
-        %% get_speach_data: function description
+    elseif strcmp(trace_name, 'speech')
+        %% get_speech_data: function description
         inputdir = '/scratch/cluster/yichao/warp/data/speach/';
         files = {'Orig', '093', '088', '085', '082', '078', '075', '072', '069', '064'};
 
