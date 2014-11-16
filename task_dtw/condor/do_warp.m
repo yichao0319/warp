@@ -11,9 +11,14 @@ function [X_warp, other_warp] = do_warp(X_cluster, warp_method, opt, other_mat)
         fprintf('  do shift\n');
         [X_warp, other_warp] = do_shift(X_cluster, other_mat);
 
+    elseif strcmp(warp_method, 'shift_limit')
+        fprintf('  do shift limit (make sure all ts have common parts)\n');
+        [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat);
+
     elseif strcmp(warp_method, 'stretch')
         fprintf('  do stretch\n');
         [X_warp, other_warp] = do_stretch(X_cluster, other_mat);
+        
     elseif strcmp(warp_method, 'na')
         fprintf('  no warp\n');
         X_warp = X_cluster;

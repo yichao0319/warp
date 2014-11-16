@@ -52,7 +52,7 @@ function [r] = do_exp(trace_name, trace_opt, ...
     %% --------------------
     if DEBUG2, fprintf('load data\n'); end
 
-    [X, r, bin] = get_trace(trace_name, trace_opt);
+    [X, r, bin, alpha, lambda] = get_trace(trace_name, trace_opt);
     fprintf('X size: %dx%d\n', size(my_cell2mat(X)));
     tmp{1} = X;
     if DEBUG3, plot_ts(tmp, ['./tmp/' trace_name '.orig']); end
@@ -73,7 +73,12 @@ function [r] = do_exp(trace_name, trace_opt, ...
     %% --------------------
     if DEBUG2, fprintf('clustering\n'); end
     
-    [X_cluster, M_cluster] = do_cluster(X, num_cluster, cluster_method, M);
+    other_mat = {};
+    other_mat{1} = M;
+    other_mat{2} = X;
+    other_cluster = {};
+
+    [X_cluster, other_cluster] = do_cluster(X, num_cluster, cluster_method, other_mat);
     fprintf('  # cluster: %d\n', length(X_cluster));
     
 
@@ -82,8 +87,12 @@ function [r] = do_exp(trace_name, trace_opt, ...
     %% --------------------
     if DEBUG2, fprintf('warping\n'); end
 
-    [X_warp, M_cluster] = do_warp(X_cluster, warp_method, warp_opt, M_cluster);
-    
+    other_mat = {};
+    other_mat{1} = other_cluster{1};
+    other_mat{2} = other_cluster{2};
+    other_cluster = {};
+
+    [X_warp, other_cluster] = do_warp(X_cluster, warp_method, warp_opt, other_mat);
 
     % r = get_seg_rank(cluster2mat(X_warp), rank_num_seg, rank_percentile);
     r = get_rank(X_warp, rank_opt);

@@ -1,8 +1,12 @@
 %% align_cluster: function description
 function [align_ts, align_other] = align_cluster(ts, ws, other_mat)
     align_other = {};
-    
-    for ti = 1:length(ts{1})
+
+    possible_ws_values = sort(unique(ws{2}(:,1)));
+    max_num = {};
+
+    % for ti = 1:length(ts{1})
+    for ti = possible_ws_values'
         max_num{ti} = 0;
         for tsi = 2:length(ts)
             this_num = length(find(ws{tsi}(:,1) == ti));

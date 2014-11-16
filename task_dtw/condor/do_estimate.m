@@ -1,45 +1,33 @@
 %% do_estimate: function description
 function [X_est] = do_estimate(X, M, esti_method, est_opt)
-    [r] = get_est_opt(est_opt);
+    [r, alpha, lambda] = get_est_opt(est_opt);
 
     if strcmp(esti_method, 'lens')
         [X_est, x, y, z] = wrap_lens(X, M, r);
 
-    elseif strcmp(esti_method, 'SRMF')
+    elseif strcmp(esti_method, 'srmf')
         epsilon = 0.01;
-        period  = 1;
-        alpha   = 10;
-        lambda  = 0.01;
+        period = 1;
 
-        [A, b] = XM2Ab(X, M);
-        config = ConfigSRTF(A, b, X, M, size(X), r, r, epsilon, true, period);
-        [u4, v4, w4] = SRTF(X, r, M, config, alpha, lambda, 50);
+        X_est = wrap_srmf(X, M, r, alpha, lambda, epsilon, period);
 
-        X_est = tensorprod(u4, v4, w4);
-        X_est = max(0, X_est);
-    elseif strcmp(esti_method, 'KNN')
-        Z = X;
-        Z(~M) = 0;
-
+    elseif strcmp(esti_method, 'srmf_knn')
+        epsilon = 0.01;
+        period = 1;
         maxDist = 3;
         EPS = 1e-3;
 
-        for i = 1:size(Z,1)
-            for j = find(M(i,:) == 0);
-                ind = find((M(i,:)==1) & (abs((1:size(Z,2)) - j) <= maxDist));
-                if (~isempty(ind))
-                    Y  = X(:,ind);
-                    C  = Y'*Y;
-                    nc = size(C,1);
-                    C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
-                    w  = C\(Y'*X(:,j));
-                    w  = reshape(w,1,nc);
-                    Z(i,j) = sum(X(i,ind).*w);
-                end
-            end
-        end
+        X_est = wrap_srmf(X, M, r, alpha, lambda, epsilon, period);        
+        X_est = wrap_knn(X_est, X, M, maxDist, EPS);
+
+    elseif strcmp(esti_method, 'knn')
+        maxDist = 3;
+        EPS = 1e-3;
         
-        X_est = Z;
+        X_est = X;
+        X_est(~M) = 0;
+        
+        X_est = wrap_knn(X_est, X, M, maxDist, EPS);
 
     elseif strcmp(esti_method, 'na')
         X_est = X;
@@ -51,8 +39,10 @@ end
 
 
 %% get_dtw_opt: function description
-function [r] = get_est_opt(opt)
+function [r, alpha, lambda] = get_est_opt(opt)
     r = 1;
+    alpha = 0;
+    lambda = 0;
     if nargin < 1, return; end
 
     opts = regexp(opt, ',', 'split');
@@ -109,3 +99,36 @@ function [X_est,x,y,z] = wrap_lens(X, M, r0)
 end
 
 
+%% wrap_srmf: function description
+function [X_est] = wrap_srmf(X, M, r, alpha, lambda, epsilon, period)
+    r = min([r, size(X)]);
+    [A, b] = XM2Ab(X, M);
+    config = ConfigSRTF(A, b, X, M, size(X), r, r, epsilon, true, period);
+    [u4, v4, w4] = SRTF(X, r, M, config, alpha, lambda, 50);
+
+    X_est = tensorprod(u4, v4, w4);
+end
+
+
+%% wrap_knn: function description
+function [X_est] = wrap_knn(X_est, X, M, maxDist, EPS)
+    Z = X_est;
+    Z(~M) = 0;
+
+    for i = 1:size(Z,1)
+        for j = find(M(i,:) == 0);
+            ind = find((M(i,:)==1) & (abs((1:size(Z,2)) - j) <= maxDist));
+            if (~isempty(ind))
+                Y  = X_est(:,ind);
+                C  = Y'*Y;
+                nc = size(C,1);
+                C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
+                w  = C\(Y'*X_est(:,j));
+                w  = reshape(w,1,nc);
+                Z(i,j) = sum(X(i,ind).*w);
+            end
+        end
+    end
+
+    X_est = Z;
+end
