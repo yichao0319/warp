@@ -10,6 +10,9 @@
 %%     > 2: sum of the ranks of each cluster
 %% - warp_opt
 %%   > num_seg
+%%
+%% e.g.
+%%   do_exp('test_sine_shift', 'na', 'percentile=0.8,num_seg=1,r_method=1', 1, 'kmeans', 'dtw', 'num_seg=1');
 function [r] = do_exp(trace_name, trace_opt, ...
                 rank_opt, ...
                 num_cluster, cluster_method, ...
@@ -37,12 +40,15 @@ function [r] = do_exp(trace_name, trace_opt, ...
     output_dir = '../../processed_data/task_dtw/do_exp/';
     % output_dir = '/u/yichao/warp/condor_data/task_dtw/condor/do_exp/';
 
+    if DEBUG3, figbase = ['./tmp/' trace_name];
+    else, figbase = ''; end
+
 
     %% --------------------------
     %% Input parameters
-    if num_cluster < 0
-        num_cluster = Inf;
-    end
+    % if num_cluster < 0
+    %     num_cluster = Inf;
+    % end
     %% END Input parameters
     %% --------------------------
 
@@ -92,7 +98,7 @@ function [r] = do_exp(trace_name, trace_opt, ...
     other_mat{2} = other_cluster{2};
     other_cluster = {};
 
-    [X_warp, other_cluster] = do_warp(X_cluster, warp_method, warp_opt, other_mat);
+    [X_warp, other_cluster] = do_warp(X_cluster, warp_method, warp_opt, other_mat, figbase);
 
     % r = get_seg_rank(cluster2mat(X_warp), rank_num_seg, rank_percentile);
     r = get_rank(X_warp, rank_opt);

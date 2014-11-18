@@ -1,4 +1,6 @@
-function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat)
+function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat, figbase)
+    if nargin < 3, figbase = ''; end
+
     other_warp = {};
 
     shift_lim_left = 1/3;
@@ -20,6 +22,9 @@ function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat)
 
         cc = [];
         for tsi = 2:length(X_cluster{ci})
+            ts1_len = length(X_cluster{ci}{1});
+            ts2_len = length(X_cluster{ci}{tsi});
+            
             [shift_idx1, shift_idx2, this_cc] = find_best_shift_limit(X_cluster{ci}{1}, X_cluster{ci}{tsi}, shift_lim_left, shift_lim_right);
             cc(tsi-1, :) = this_cc;
             ws{tsi} = [];
@@ -53,7 +58,16 @@ function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat)
         %% ----------
         %% DEBUG
         %%   plot cc
-        % plot_cc(cc, ['./tmp/tmp.do_shift.cc']);
+        if ~strcmp(figbase, '')
+            range_left  = min(ts1_len, ceil(ts1_len*shift_lim_right));
+            range_right = max(1, floor(ts1_len*shift_lim_left)) - 1 + ts2_len;
+            range = [range_left:range_right];
+            plot_cc(cc, range, ts2_len, [figbase '.do_shift.cc']);
+            plot_offset(cc, range, ts2_len, [figbase '.do_shift.offset']);
+            plot_best_cc(cc, range, ts2_len, [figbase '.do_shift.best_cc']);
+
+            plot_rank_compare(X_cluster{ci}, ws, X_warp{ci}, [figbase '.do_shift.rank']);
+        end
     end
 end
 
@@ -70,9 +84,10 @@ function [shift_idx1, shift_idx2, cc] = find_best_shift_limit(ts1, ts2, lim_left
     % for idx = [1-length(ts2):length(ts1)-1]
     ts1_left  = max(1, floor(length(ts1)*lim_left));
     ts1_right = min(length(ts1), ceil(length(ts1)*lim_right));
-    lim_idx_left  = ts1_right - length(ts1);
+    lim_idx_left  = ts1_right - length(ts2);
     lim_idx_right = ts1_left - 1;
     
+    cc = ones(1, lim_idx_right+length(ts2)) * (-1);
     for idx = [lim_idx_left:lim_idx_right]
         [idx1_padded, idx2_padded] = shift_pad(length(ts1), length(ts2), idx);
         tmp1 = find(idx1_padded == ts1_left);
@@ -143,7 +158,7 @@ end
 %% plot figures:
 
 %% plot_cc: function description
-function plot_cc(cc, figname)
+function plot_cc(cc, range, ts2_len, figname)
     font_size = 12;
     colors   = {'r', 'b', [0 0.8 0], 'm', [1 0.85 0], [0 0 0.47], [0.45 0.17 0.48], 'k'};
     lines    = {'-', '--'};
@@ -155,7 +170,7 @@ function plot_cc(cc, figname)
     
     fh = figure(1); clf;
     for li = 1:min(5, length(sort_idx))
-        lh{li} = plot(cc(sort_idx(li), :));
+        lh{li} = plot(range - ts2_len, cc(sort_idx(li), range));
         set(lh{li}, 'Color', colors{mod(li-1,length(colors))+1});
         set(lh{li}, 'LineStyle', lines{mod(li-1,length(lines))+1});  %% line  : -|--|:|-.
         set(lh{li}, 'LineWidth', 2);
@@ -164,7 +179,7 @@ function plot_cc(cc, figname)
     end
 
     set(gca, 'FontSize', font_size);
-    xlabel('samples', 'FontSize', font_size);
+    xlabel('Offset', 'FontSize', font_size);
     ylabel('corrcoef', 'FontSize', font_size);
 
     % legend(legends, 'Location', 'Best');
@@ -172,3 +187,166 @@ function plot_cc(cc, figname)
     print(fh, '-depsc', [figname '.eps']);
 end
 
+%% plot_offset: function description
+function plot_offset(cc, range, ts2_len, figname)
+    font_size = 12;
+    colors   = {'r', 'b', [0 0.8 0], 'm', [1 0.85 0], [0 0 0.47], [0.45 0.17 0.48], 'k'};
+    lines    = {'-', '--'};
+    markers  = {'+', 'o', '*', '.', 'x', 's', 'd', '^', '>', '<', 'p', 'h'};
+
+    [max_cc, max_cc_idx] = max(cc(:, range), [], 2);
+    max_cc_idx = range(max_cc_idx) - ts2_len;
+    max_cc_idx(find(isnan(max_cc))) = 0;
+    
+    [f, x] = ecdf(max_cc_idx);
+    p = f(2:end) - f(1:end-1);
+    x = x(2:end);
+    
+    fh = figure(1); clf;
+    li = 1;
+    lh{li} = plot(x, p);
+    set(lh{li}, 'Color', colors{mod(li-1,length(colors))+1});
+    set(lh{li}, 'LineStyle', lines{mod(li-1,length(lines))+1});  %% line  : -|--|:|-.
+    set(lh{li}, 'LineWidth', 4);
+    
+    set(gca, 'FontSize', font_size);
+    xlabel('Offset', 'FontSize', font_size);
+    ylabel('PDF', 'FontSize', font_size);
+
+    % legend(legends, 'Location', 'Best');
+    % legend(legends, 'Location', 'NorthEast');
+    print(fh, '-depsc', [figname '.eps']);
+end
+
+
+%% plot_best_cc: function description
+function plot_best_cc(cc, range, ts2_len, figname)
+    font_size = 12;
+    colors   = {'r', 'b', [0 0.8 0], 'm', [1 0.85 0], [0 0 0.47], [0.45 0.17 0.48], 'k'};
+    lines    = {'-', '--'};
+    markers  = {'+', 'o', '*', '.', 'x', 's', 'd', '^', '>', '<', 'p', 'h'};
+
+
+    %% best corrcoef
+    [max_cc, max_cc_idx] = max(cc(:, range), [], 2);
+    [f, x] = ecdf(max_cc);
+
+    fh = figure(1); clf;
+    li = 1;
+    lh{li} = plot(x, f);
+    set(lh{li}, 'Color', colors{mod(li-1,length(colors))+1});
+    set(lh{li}, 'LineStyle', lines{mod(li-1,length(lines))+1});  %% line  : -|--|:|-.
+    set(lh{li}, 'LineWidth', 4);
+    legends{li} = 'best cc';
+    hold on;
+
+
+    %% orig corrcoef
+    offset0_cc = cc(:, ts2_len);
+    [f, x] = ecdf(offset0_cc);
+    
+    li = li + 1;
+    lh{li} = plot(x, f);
+    set(lh{li}, 'Color', colors{mod(li-1,length(colors))+1});
+    set(lh{li}, 'LineStyle', lines{mod(li-1,length(lines))+1});  %% line  : -|--|:|-.
+    set(lh{li}, 'LineWidth', 4);
+    legends{li} = 'orig cc';
+
+
+    %% corrcoef improvement
+    improve_cc = max_cc - offset0_cc;
+    [f, x] = ecdf(improve_cc);
+    
+    li = li + 1;
+    lh{li} = plot(x, f);
+    set(lh{li}, 'Color', colors{mod(li-1,length(colors))+1});
+    set(lh{li}, 'LineStyle', lines{mod(li-1,length(lines))+1});  %% line  : -|--|:|-.
+    set(lh{li}, 'LineWidth', 4);
+    legends{li} = 'cc improvement';
+
+    
+    set(gca, 'FontSize', font_size);
+    xlabel('Best CorrCoef', 'FontSize', font_size);
+    ylabel('CDF', 'FontSize', font_size);
+
+    legend(legends, 'Location', 'NorthWest');
+    % legend(legends, 'Location', 'NorthEast');
+    print(fh, '-depsc', [figname '.eps']);
+end
+
+%% plot_rank_compare
+function plot_rank_compare(X_cluster, ws, X_warp, figname)
+    font_size = 12;
+    colors   = {'r', 'b', [0 0.8 0], 'm', [1 0.85 0], [0 0 0.47], [0.45 0.17 0.48], 'k'};
+    lines    = {'-', '--'};
+    markers  = {'+', 'o', '*', '.', 'x', 's', 'd', '^', '>', '<', 'p', 'h'};
+
+
+    %% ----------
+    %% DEBUG
+    for tsi = 3:length(ws)
+        if nnz(ws{tsi}(:,1) - ws{2}(:,1)) > 0
+            tsi
+            [ws{2}(:,1) ws{tsi}(:,1)]
+            error('should be the same');
+        end
+    end
+    %% ----------
+
+    tmp{1} = X_warp;
+    rank_opt = 'percentile=0.8,num_seg=1,r_method=1';
+    r_warp = get_rank(tmp, rank_opt);
+
+
+    %% every ts shift to the "tsi" row
+    for tsi = 1:length(ws)
+        if tsi == 1
+            this_ws = ws{2}(:, 1);
+        else
+            this_ws = ws{tsi}(:, 2);
+        end
+
+        tmp = {};
+        for tsi2 = 1:length(ws)
+            tmp{1}{tsi2} = X_cluster{tsi2}(this_ws);
+        end
+        r_other(tsi) = get_rank(tmp, rank_opt);
+    end
+
+    [f, x] = ecdf(r_other);
+
+
+    fh = figure(1); clf;
+    li = 1;
+    lh{li} = plot(x, f);
+    set(lh{li}, 'Color', colors{mod(li-1,length(colors))+1});
+    set(lh{li}, 'LineStyle', lines{mod(li-1,length(lines))+1});  %% line  : -|--|:|-.
+    set(lh{li}, 'LineWidth', 4);
+    legends{li} = 'CDF of ranks';
+    hold on;
+
+    li = li + 1;
+    lh{li} = plot([r_warp r_warp], [0 1]);
+    set(lh{li}, 'Color', colors{mod(li-1,length(colors))+1});
+    set(lh{li}, 'LineStyle', lines{mod(li-1,length(lines))+1});  %% line  : -|--|:|-.
+    set(lh{li}, 'LineWidth', 4);
+    legends{li} = 'rank after shift';
+
+
+    r_other_mean = mean(r_other);
+    li = li + 1;
+    lh{li} = plot([r_other_mean r_other_mean], [0 1]);
+    set(lh{li}, 'Color', colors{mod(li-1,length(colors))+1});
+    set(lh{li}, 'LineStyle', lines{mod(li-1,length(lines))+1});  %% line  : -|--|:|-.
+    set(lh{li}, 'LineWidth', 4);
+    legends{li} = 'mean rank';
+
+
+    set(gca, 'FontSize', font_size);
+    xlabel('Rank', 'FontSize', font_size);
+    ylabel('CDF', 'FontSize', font_size);
+
+    legend(legends, 'Location', 'NorthWest');
+    % legend(legends, 'Location', 'NorthEast');
+    print(fh, '-depsc', [figname '.eps']);
+end

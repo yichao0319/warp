@@ -1,6 +1,9 @@
 %% do_warp(X_cluster, warp_method)
-function [X_warp, other_warp] = do_warp(X_cluster, warp_method, opt, other_mat)
+function [X_warp, other_warp] = do_warp(X_cluster, warp_method, opt, other_mat, figbase)
     DEBUG_TIME = 0;
+
+    if nargin < 5, figbase = ''; end
+    
 
     t1 = tic;
     if strcmp(warp_method, 'dtw')
@@ -13,7 +16,7 @@ function [X_warp, other_warp] = do_warp(X_cluster, warp_method, opt, other_mat)
 
     elseif strcmp(warp_method, 'shift_limit')
         fprintf('  do shift limit (make sure all ts have common parts)\n');
-        [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat);
+        [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat, figbase);
 
     elseif strcmp(warp_method, 'stretch')
         fprintf('  do stretch\n');
