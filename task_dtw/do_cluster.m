@@ -1,5 +1,6 @@
 %% do_cluster: function description
 function [X_cluster, other_cluster] = do_cluster(X, num_cluster, method, other_mat)
+    addpath('/u/yichao/warp/git_repository/utils/spectral_cluster');
 
     if nargin < 2, num_cluster = 1; end
     if nargin < 3, method = 'kmeans'; end
@@ -35,6 +36,13 @@ function [X_cluster, other_cluster] = do_cluster(X, num_cluster, method, other_m
             tic;
             cluster_idx = my_kmeans(my_cell2mat(X), num_cluster, affinity);
             fprintf('  done clustering: %f\n', toc);
+        elseif strcmp(method, 'spectral')
+            X_tmp = my_cell2mat(X);
+            X_tmp(isnan(X_tmp)) = 0;
+            X_tmp = num2cell(X_tmp, 2);
+            [affinity_mat, tmp_ws] = get_affinity_mat(X_tmp);
+            affinity = 1 ./ squareform(affinity_mat);
+            cluster_idx = spectral_cluster(affinity);
         else
             error(['wrong method name: ' method])
         end
