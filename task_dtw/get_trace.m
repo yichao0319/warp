@@ -32,8 +32,8 @@ function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
         % r = 32;
         r = 300;
         bin = 15*60;
-        alpha = 0;
-        lambda = 0;
+        alpha = 1;
+        lambda = 100000;
 
     elseif strcmp(trace_name, 'wifi')
         filename = 'tm_sjtu_wifi.ap_load.all.bin600.top50.txt';
@@ -80,8 +80,8 @@ function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
 
         r = 64;
         bin = 1;
-        alpha = 0;
-        lambda = 0;
+        alpha = 0.1;
+        lambda = 10;
 
     elseif strcmp(trace_name, 'cister')
         filename = 'tm_telos_rssi.txt';
@@ -128,8 +128,8 @@ function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
         % r = 16;
         r = 90;
         bin = 1;
-        alpha = 0;
-        lambda = 0;
+        alpha = 0.1;
+        lambda = 0.1;
 
     elseif strcmp(trace_name, 'multi-ch-csi')
         filename = 'static_trace13.ant1.mag.txt';
@@ -144,8 +144,8 @@ function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
         % r = 16;
         r = 270;
         bin = 1;
-        alpha = 0;
-        lambda = 0;
+        alpha = 1;
+        lambda = 0.0001;
 
     elseif strcmp(trace_name, 'ucsb')
         filename = 'tm_ucsb_meshnet.connected.txt';
@@ -161,7 +161,7 @@ function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
         r = 300;
         bin = 1*60;
         alpha = 0;
-        lambda = 0;
+        lambda = 1000;
 
     elseif strcmp(trace_name, 'speech')
         %% get_speech_data: function description
