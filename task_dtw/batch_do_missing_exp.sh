@@ -1,4 +1,4 @@
-## do_exp: 
+## do_missing_exp
 ## - trace_opt
 ##   > 4sq: num_loc, num_rep, loc_type
 ##   > p300: subject, session, img_idx, mat_type
@@ -8,13 +8,14 @@
 ##   > r_method
 ##     > 1: fill in shorter clusters with 0s
 ##     > 2: sum of the ranks of each cluster
+## - elem_frac: 1
+## - loss_rate: 0.1
+## - elem_mode: 'elem'
+## - loss_mode: 'ind'
+## - warp_opt: 
 ## - warp_opt
 ##   > num_seg
 ##
-## function [r] = do_exp(trace_name, trace_opt, ...
-##                rank_opt, ...
-##                num_cluster, cluster_method, ...
-##                warp_method, warp_opt)
 
 trace_names=("abilene" "geant" "wifi" "3g" "1ch-csi" "cister" "cu" "multi-ch-csi" "ucsb" "umich" "test_sine_shift" "test_sine_scale" "p300" "4sq" "blink")
 
@@ -34,5 +35,5 @@ for trace_name in ${trace_names[@]}; do
         trace_opt="na"
     fi
     
-    matlab -r "do_exp('${trace_name}', '${trace_opt}', 'percentile=0.8,num_seg=1,r_method=1', $num_cluster, '$cluster_method', '$warp_method', 'num_seg=1'); exit;"
+    matlab -r "[mae, mae_orig] = do_missing_exp('${trace_name}', '${trace_opt}', 'percentile=0.8,num_seg=1,r_method=1', 1, 0.1, 'elem', 'ind', 1, 'na', 'knn', ${num_cluster}, '${cluster_method}', '${warp_method}', 'num_seg=1', 1); exit;"
 done
