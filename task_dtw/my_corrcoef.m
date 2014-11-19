@@ -3,7 +3,7 @@
 function [coeff] = my_corrcoef(ts1, ts2)
     idx = find(~isnan(ts1) & ~isnan(ts2));
     if length(idx) < 3
-        coeff = [0 0; 0 0];
+        coeff = [-1 -1; -1 -1];
         return;
     end
     coeff = corrcoef(ts1(idx), ts2(idx));

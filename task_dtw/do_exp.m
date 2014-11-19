@@ -84,7 +84,7 @@ function [r] = do_exp(trace_name, trace_opt, ...
     other_mat{2} = X;
     other_cluster = {};
 
-    [X_cluster, other_cluster] = do_cluster(X, num_cluster, cluster_method, other_mat);
+    [X_cluster, other_cluster] = do_cluster(X, num_cluster, cluster_method, figbase, other_mat);
     fprintf('  # cluster: %d\n', length(X_cluster));
     
 

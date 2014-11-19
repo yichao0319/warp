@@ -17,10 +17,14 @@
 ##   > num_seg
 ##
 
-trace_names=("abilene" "geant" "wifi" "3g" "1ch-csi" "cister" "cu" "multi-ch-csi" "ucsb" "umich" "test_sine_shift" "test_sine_scale" "p300" "4sq" "blink")
+trace_names=("abilene" "geant" "wifi" "3g" "1ch-csi" "cister" "cu" "multi-ch-csi" "ucsb" "umich" "p300" "4sq" "blink")
+# "test_sine_shift" "test_sine_scale" 
 
-cluster_method="kmeans"
-num_cluster=1
+
+# cluster_method="kmeans"
+# num_cluster=1
+cluster_method="spectral_cc"
+num_cluster=0
 warp_method="shift_limit"
 
 for trace_name in ${trace_names[@]}; do

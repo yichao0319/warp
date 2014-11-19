@@ -117,7 +117,7 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     other_mat{3} = invM_est;
     other_cluster = {};
 
-    [X_cluster, other_cluster] = do_cluster(X_est, num_cluster, cluster_method, other_mat);
+    [X_cluster, other_cluster] = do_cluster(X_est, num_cluster, cluster_method, figbase, other_mat);
     fprintf('  # cluster: %d\n', length(X_cluster));
 
 

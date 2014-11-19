@@ -10,11 +10,16 @@ function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat, figbase)
 
     for ci = 1:length(X_cluster)
         if length(X_cluster{ci}) == 1
-            X_warp{ci} = X_cluster{ci};
-            % M_warp{ci} = M_cluster{ci};
+            % X_warp{ci} = X_cluster{ci};
+            ts1 = X_cluster{ci}{1};
+            ts1_left  = max(1, floor(length(ts1)*shift_lim_left));
+            ts1_right = min(length(ts1), ceil(length(ts1)*shift_lim_right));
+            X_warp{ci}{1} = ts1(ts1_left:ts1_right);
+
             if nargin >= 2
                 for oi = 1:length(other_mat)
-                    other_warp{oi}{ci} = other_mat{oi}{ci};
+                    % other_warp{oi}{ci} = other_mat{oi}{ci};
+                    other_warp{oi}{ci}{1} = other_mat{oi}{ci}{1}(ts1_left:ts1_right);
                 end
             end
             continue;
@@ -62,11 +67,12 @@ function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat, figbase)
             range_left  = min(ts1_len, ceil(ts1_len*shift_lim_right));
             range_right = max(1, floor(ts1_len*shift_lim_left)) - 1 + ts2_len;
             range = [range_left:range_right];
-            plot_cc(cc, range, ts2_len, [figbase '.do_shift.cc']);
-            plot_offset(cc, range, ts2_len, [figbase '.do_shift.offset']);
-            plot_best_cc(cc, range, ts2_len, [figbase '.do_shift.best_cc']);
+            % plot_cc(cc, range, ts2_len, [figbase '.do_shift.cc']);
+            % plot_offset(cc, range, ts2_len, [figbase '.do_shift.offset']);
+            % plot_best_cc(cc, range, ts2_len, [figbase '.do_shift.best_cc']);
 
-            plot_rank_compare(X_cluster{ci}, ws, X_warp{ci}, [figbase '.do_shift.rank']);
+            %% shouldn't run this for interpolation
+            % plot_rank_compare(X_cluster{ci}, ws, X_warp{ci}, [figbase '.do_shift.rank']);
         end
     end
 end
