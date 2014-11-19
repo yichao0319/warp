@@ -2,7 +2,7 @@
 %% - opt
 %%   > 4sq: num_loc, num_rep, loc_type
 %%   > p300: subject, session, img_idx, mat_type
-function [mat, r, bin] = get_trace(trace_name, opt)
+function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
     test_time = 100;
 
     if strcmp(trace_name, 'abilene')
@@ -13,6 +13,8 @@ function [mat, r, bin] = get_trace(trace_name, opt)
         % r = 32;
         r = 32;
         bin = 10*60;
+        alpha = 10;
+        lambda = 1;
 
     elseif strcmp(trace_name, 'geant')
         input_dir  = '/u/yzhang/MRA/data/';
@@ -30,6 +32,8 @@ function [mat, r, bin] = get_trace(trace_name, opt)
         % r = 32;
         r = 300;
         bin = 15*60;
+        alpha = 1;
+        lambda = 100000;
 
     elseif strcmp(trace_name, 'wifi')
         filename = 'tm_sjtu_wifi.ap_load.all.bin600.top50.txt';
@@ -44,6 +48,8 @@ function [mat, r, bin] = get_trace(trace_name, opt)
         % r = 8;
         r = 16;
         bin = 10*60;
+        alpha = 100;
+        lambda = 100;
 
     elseif strcmp(trace_name, '3g')
         filename = 'tm_3g.cell.bs.bs3.all.bin10.txt';
@@ -58,6 +64,8 @@ function [mat, r, bin] = get_trace(trace_name, opt)
         % r = 32;
         r = 8;
         bin = 10*60;
+        alpha = 100;
+        lambda = 0.00001;
 
     elseif strcmp(trace_name, 'cu')
         filename = 'tm_multi_loc_rssi.txt';
@@ -72,6 +80,8 @@ function [mat, r, bin] = get_trace(trace_name, opt)
 
         r = 64;
         bin = 1;
+        alpha = 0.1;
+        lambda = 10;
 
     elseif strcmp(trace_name, 'cister')
         filename = 'tm_telos_rssi.txt';
@@ -86,6 +96,8 @@ function [mat, r, bin] = get_trace(trace_name, opt)
         % r = 8;
         r = 64;
         bin = 1;
+        alpha = 100;
+        lambda = 0;
 
     elseif strcmp(trace_name, 'umich')
         filename = 'tm_umich_rss.txt';
@@ -100,6 +112,8 @@ function [mat, r, bin] = get_trace(trace_name, opt)
         % r = 32;
         r = 64;
         bin = 1;
+        alpha = 1;
+        lambda = 0.0001;
 
     elseif strcmp(trace_name, '1ch-csi')
         filename = 'Mob-Recv1run1.dat0_matrix.mat_dB.txt';
@@ -114,6 +128,8 @@ function [mat, r, bin] = get_trace(trace_name, opt)
         % r = 16;
         r = 90;
         bin = 1;
+        alpha = 0.1;
+        lambda = 0.1;
 
     elseif strcmp(trace_name, 'multi-ch-csi')
         filename = 'static_trace13.ant1.mag.txt';
@@ -128,6 +144,8 @@ function [mat, r, bin] = get_trace(trace_name, opt)
         % r = 16;
         r = 270;
         bin = 1;
+        alpha = 1;
+        lambda = 0.0001;
 
     elseif strcmp(trace_name, 'ucsb')
         filename = 'tm_ucsb_meshnet.connected.txt';
@@ -142,6 +160,8 @@ function [mat, r, bin] = get_trace(trace_name, opt)
         % r = 16;
         r = 300;
         bin = 1*60;
+        alpha = 0;
+        lambda = 1000;
 
     elseif strcmp(trace_name, 'speech')
         %% get_speech_data: function description
@@ -163,9 +183,13 @@ function [mat, r, bin] = get_trace(trace_name, opt)
 
         r = 8;
         bin = 1;
+        alpha = 0;
+        lambda = 1;
 
     elseif strcmp(trace_name, '4sq')
         [X, r, bin] = get_trace_4sq(opt);
+        alpha = 1;
+        lambda = 100;
 
     elseif strcmp(trace_name, 'blink')
         basename = 'new_blink_';
@@ -194,9 +218,13 @@ function [mat, r, bin] = get_trace(trace_name, opt)
         % r = 16;
         r = length(file_cnt) / 2;
         bin = 1;
+        alpha = 10;
+        lambda = 0.0001;
 
     elseif strcmp(trace_name, 'p300')
         [X, r, bin] = get_trace_p300(opt);
+        alpha = 10;
+        lambda = 10;
 
     elseif strcmp(trace_name, 'test')
         nr = 20;
@@ -204,6 +232,9 @@ function [mat, r, bin] = get_trace(trace_name, opt)
         X = reshape(1:nr*test_time, test_time, nr)';
         r = 3;
         bin = 1;
+        alpha = 1;
+        lambda = 1;
+
     elseif strcmp(trace_name, 'test_sine_shift')
         %% y(x, t) = A sin(kx + wt + whi) + D
         %%    x: location
@@ -223,6 +254,8 @@ function [mat, r, bin] = get_trace(trace_name, opt)
 
         r = 2;
         bin = 1;
+        alpha = 0;
+        lambda = 0;
     
     elseif strcmp(trace_name, 'test_sine_scale')
         fs = 32;
@@ -242,6 +275,8 @@ function [mat, r, bin] = get_trace(trace_name, opt)
 
         r = 2;
         bin = 1;
+        alpha = 1000;
+        lambda = 0.00001;
     
     end
 

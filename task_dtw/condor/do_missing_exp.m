@@ -33,10 +33,10 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     %% DEBUG
     %% --------------------
     DEBUG0 = 0;
-    DEBUG1 = 1;
-    DEBUG2 = 1;
-    DEBUG3 = 1;
-    DEBUG4 = 1;  %% results
+    DEBUG1 = 0;
+    DEBUG2 = 0;
+    DEBUG3 = 0;
+    DEBUG4 = 0;  %% results
 
 
     %% --------------------
@@ -45,15 +45,18 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     rand('seed', seed);
     randn('seed', seed);
 
-    output_dir = '../../processed_data/task_dtw/do_missing_exp/';
-    % output_dir = '/u/yichao/warp/condor_data/task_dtw/condor/do_missing_exp/';
+    % output_dir = '../../processed_data/task_dtw/do_missing_exp/';
+    output_dir = '/u/yichao/warp/condor_data/task_dtw/condor/do_missing_exp/';
+
+    if DEBUG3, figbase = ['./tmp/' trace_name];
+    else, figbase = ''; end
 
 
     %% --------------------------
     %% Input parameters
-    if num_cluster < 0
-        num_cluster = Inf;
-    end
+    % if num_cluster < 0
+    %     num_cluster = Inf;
+    % end
     %% END Input parameters
     %% --------------------------
 
@@ -114,7 +117,7 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     other_mat{3} = invM_est;
     other_cluster = {};
 
-    [X_cluster, other_cluster] = do_cluster(X_est, num_cluster, cluster_method, other_mat);
+    [X_cluster, other_cluster] = do_cluster(X_est, num_cluster, cluster_method, figbase, other_mat);
     fprintf('  # cluster: %d\n', length(X_cluster));
 
 
@@ -129,7 +132,7 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     other_mat{3} = other_cluster{3};
     other_cluster = {};
 
-    [X_warp, other_cluster] = do_warp(X_cluster, warp_method, warp_opt, other_mat);
+    [X_warp, other_cluster] = do_warp(X_cluster, warp_method, warp_opt, other_mat, figbase);
     M_warp = cluster2mat(other_cluster{1});
     X_orig = cluster2mat(other_cluster{2});
     invM_warp = cluster2mat(other_cluster{3});
@@ -152,7 +155,9 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     %% estimate without warping
     invM_ind = invM_warp(find(invM_warp > 0));
     invM_orig = ~ismember(invM, invM_ind);
-    X_orig_est = do_estimate(my_cell2mat(X), invM_orig, final_esti_method, est_opt);
+    % X_orig_est = do_estimate(my_cell2mat(X), invM_orig, final_esti_method, est_opt);
+    X_orig_est = do_estimate(my_cell2mat(X), M, final_esti_method, est_opt);
+
 
     if DEBUG3
         fprintf('  size of X: %dx%d\n', size(X_est));
@@ -167,7 +172,6 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
         tmp2 = {}; tmp2{1} = num2cell(X_orig, 2);
         tmp3 = {}; tmp3{1} = num2cell(M_warp, 2);
         plot_missing_ts(tmp, tmp2, tmp3, ['./tmp/' trace_name '.missing']);
-
         tmp  = {}; tmp{1}  = num2cell(X_est, 2);
         tmp2 = {}; tmp2{1} = num2cell(X_orig, 2);
         tmp3 = {}; tmp3{1} = num2cell(M_warp, 2);
@@ -193,6 +197,14 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     mae_orig = calculate_mae(my_cell2mat(X), X_orig_est, invM_orig);
 
 
+    %% --------------------
+    %% calculate rank
+    %% --------------------
+    if DEBUG2, fprintf('calculate rank\n'); end
+
+
+
+
 
     % trace_name, trace_opt, ...
     % rank_opt, ...
@@ -201,7 +213,7 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     % num_cluster, cluster_method, ...
     % warp_method, warp_opt, ...
     % seed
-    dlmwrite([output_dir trace_name '.' trace_opt '.' cluster_method '.c' num2str(num_cluster) '.' warp_method '.' warp_opt '.' rank_opt '.elem' num2str(elem_frac) '.lr' num2str(loss_rate) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.s' num2str(seed) '.txt'], mae);
+    dlmwrite([output_dir trace_name '.' trace_opt '.' cluster_method '.c' num2str(num_cluster) '.' warp_method '.' warp_opt '.' rank_opt '.elem' num2str(elem_frac) '.lr' num2str(loss_rate) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.s' num2str(seed) '.txt'], [mae, mae_orig]);
 end
 
 

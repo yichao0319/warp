@@ -49,7 +49,7 @@ function [X_warp, other_warp] = do_shift(X_cluster, other_mat)
         %% ----------
         %% DEBUG
         %%   plot cc
-        % plot_cc(cc, ['./tmp/tmp.do_shift.cc']);
+        plot_cc(cc, ['./tmp/tmp.do_shift.cc']);
     end
 end
 
