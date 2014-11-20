@@ -5,6 +5,7 @@ function [X_cluster, other_cluster] = do_cluster(X, num_cluster, method, figbase
     if nargin < 2, num_cluster = 1; end
     if nargin < 3, method = 'kmeans'; end
     if nargin < 4, figbase = ''; end
+    if nargin < 5, other_mat = {}; end
 
 
     other_cluster = {};
