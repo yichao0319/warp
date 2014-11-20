@@ -10,7 +10,7 @@ function postcondor_missing()
 
     % cluster_methods = {'kmeans'};
     % num_clusters = [1];
-    cluster_methods = {'spectral_cc'};
+    cluster_methods = {'spectral_shift_cc'};
     num_clusters = [0];
     
     rank_seg = 1;

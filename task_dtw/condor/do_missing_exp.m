@@ -49,7 +49,7 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     output_dir = '/u/yichao/warp/condor_data/task_dtw/condor/do_missing_exp/';
 
     if DEBUG3, figbase = ['./tmp/' trace_name];
-    else, figbase = ''; end
+    else, figbase = ['/u/yichao/warp/condor_data/task_dtw/condor/do_missing_exp.fig/' trace_name '.' trace_opt '.' cluster_method '.c' num2str(num_cluster) '.' warp_method '.' warp_opt '.' rank_opt '.elem' num2str(elem_frac) '.lr' num2str(loss_rate) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.s' num2str(seed)]; end
 
 
     %% --------------------------

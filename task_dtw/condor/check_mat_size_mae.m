@@ -41,8 +41,8 @@ function [mae_all, mae_sub] = check_mat_size_mae(trace_name, trace_opt, ...
     rand('seed', seed);
     randn('seed', seed);
 
-    % output_dir = './tmp/';
-    output_dir = '/u/yichao/warp/condor_data/task_dtw/condor/check_mat_size_mae/';
+    output_dir = './tmp/';
+    % output_dir = '/u/yichao/warp/condor_data/task_dtw/condor/check_mat_size_mae/';
     
     if DEBUG3, figbase = ['./tmp/' trace_name];
     else, figbase = ''; end

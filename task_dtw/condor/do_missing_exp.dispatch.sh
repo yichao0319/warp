@@ -13,7 +13,8 @@ rm tmp.$func.dag*
 echo "" > tmp.$func.dag
 
 
-trace_names=("abilene" "geant" "wifi" "3g" "1ch-csi" "cister" "cu" "multi-ch-csi" "ucsb" "umich" "test_sine_shift" "test_sine_scale" "p300" "4sq" "blink")
+trace_names=("abilene" "geant" "wifi" "3g" "1ch-csi" "cister" "cu" "ucsb" "umich" "p300" "4sq")
+# "test_sine_shift" "test_sine_scale" "blink" "multi-ch-csi"
 
 # warp_methods=("na" "dtw" "shift" "stretch")
 warp_methods=("shift_limit")
@@ -22,7 +23,7 @@ warp_opt="num_seg=1"
 # cluster_methods=("kmeans" "hierarchical" "hier_affinity" "kmeans_affinity")
 # cluster_methods=("kmeans")
 # num_clusters=(1)
-cluster_methods=("spectral_cc")
+cluster_methods=("spectral_shift_cc")
 num_clusters=(0)
 
 rank_seg=1
@@ -40,7 +41,7 @@ burst_size=1
 init_esti_methods=("na")
 final_esti_methods=("lens")
 
-seeds=(1 2 3 4 5)
+seeds=(1 2 3)
 
 for seed in ${seeds[@]}; do
     for loss_rate in ${loss_rates[@]}; do
