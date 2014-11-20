@@ -1,4 +1,5 @@
 function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat, figbase)
+    if nargin < 2, other_mat = {}; end
     if nargin < 3, figbase = ''; end
 
     other_warp = {};
@@ -78,86 +79,13 @@ function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat, figbase)
 end
 
 
-%% find_best_shift_limit: function description
-function [shift_idx1, shift_idx2, cc] = find_best_shift_limit(ts1, ts2, lim_left, lim_right)
-    best_cc = -2;
-
-    if length(ts2) < length(ts1) * (lim_right - lim_left)
-        error(['ts1 len=' num2str(length(ts1)) ', ts2 len=' num2str(length(ts2))]);
-    end
-    
-    % fprintf('ts1 %dx%d, ts2 %dx%d\n', size(ts1), size(ts2));
-    % for idx = [1-length(ts2):length(ts1)-1]
-    ts1_left  = max(1, floor(length(ts1)*lim_left));
-    ts1_right = min(length(ts1), ceil(length(ts1)*lim_right));
-    lim_idx_left  = ts1_right - length(ts2);
-    lim_idx_right = ts1_left - 1;
-    
-    cc = ones(1, lim_idx_right+length(ts2)) * (-1);
-    for idx = [lim_idx_left:lim_idx_right]
-        [idx1_padded, idx2_padded] = shift_pad(length(ts1), length(ts2), idx);
-        tmp1 = find(idx1_padded == ts1_left);
-        tmp2 = find(idx1_padded == ts1_right);
-        idx1_padded = idx1_padded(tmp1(1):tmp2(end));
-        idx2_padded = idx2_padded(tmp1(1):tmp2(end));
-        ts1_padded = ts1(idx1_padded);
-        ts2_padded = ts2(idx2_padded);
-        
-        coeff = my_corrcoef(ts1_padded', ts2_padded');
-        cc(1, idx+length(ts2)) = coeff(1,2);
-
-        % fprintf('  idx %d: cc = %f (best = %f)\n', idx, cc(1, idx+length(ts2)), best_cc);
-        if cc(1, idx+length(ts2)) > best_cc
-            % fprintf('      > best\n');
-            best_cc = cc(1, idx+length(ts2));
-            shift_idx1 = idx1_padded;
-            shift_idx2 = idx2_padded;
-        end
-    end
-
-    %% best corrcoef is not updated -> ts2 might be all 0s
-    if best_cc == -2
-        [shift_idx1, shift_idx2] = shift_pad(length(ts1), length(ts2), 0);
-        tmp1 = find(shift_idx1 == ts1_left);
-        tmp2 = find(shift_idx1 == ts1_right);
-        shift_idx1 = shift_idx1(tmp1(1):tmp2(end));
-        shift_idx2 = shift_idx2(tmp1(1):tmp2(end));
-    end
-end
-
 
 %% shift_pad: function description
 %% idx: -2 -1  0  1  2  3  4  5  6  7  8
 %% ts1:        1  2  3  4  5  6
 %% ts2:  1  2  3  
-function [idx1_padded, idx2_padded] = shift_pad(len1, len2, idx)
-    idx1_padded = 1:len1;
-    idx2_padded = 1:len2;
-
-    %% ts1 padding
-    ts1_pad_head = [];
-    if idx < 0
-        ts1_pad_head = ones(1, -idx) * idx1_padded(1);
-    end
+% function [idx1_padded, idx2_padded] = shift_pad(len1, len2, idx)
     
-    ts1_pad_tail = [];
-    if idx+len2 > len1
-        ts1_pad_tail = ones(1, idx+len2-len1) * idx1_padded(end);
-    end
-    idx1_padded = [ts1_pad_head idx1_padded ts1_pad_tail];
-
-    %% ts2 padding
-    ts2_pad_head = [];
-    if idx > 0
-        ts2_pad_head = ones(1, idx) * idx2_padded(1);
-    end
-    
-    ts2_pad_tail = [];
-    if idx+len2 < len1
-        ts2_pad_tail = ones(1, len1-idx-len2) * idx2_padded(end);
-    end
-    idx2_padded = [ts2_pad_head idx2_padded ts2_pad_tail];
-end
 
 
 %% ========================================

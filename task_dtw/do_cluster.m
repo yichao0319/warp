@@ -52,6 +52,13 @@ function [X_cluster, other_cluster] = do_cluster(X, num_cluster, method, figbase
             [affinity, tmp_ws] = get_affinity_mat(X_tmp, 'coef');
             affinity_mat = squareform(affinity);
             cluster_idx = spectral_cluster(affinity_mat);
+        elseif strcmp(method, 'spectral_shift_cc')
+            X_tmp = my_cell2mat(X);
+            X_tmp(isnan(X_tmp)) = 0;
+            X_tmp = num2cell(X_tmp, 2);
+            [affinity, tmp_ws] = get_affinity_mat(X_tmp, 'shift_coef');
+            affinity_mat = squareform(affinity);
+            cluster_idx = spectral_cluster(affinity_mat);
         else
             error(['wrong method name: ' method])
         end
