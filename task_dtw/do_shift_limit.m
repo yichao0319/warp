@@ -31,7 +31,8 @@ function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat, figbase)
             ts1_len = length(X_cluster{ci}{1});
             ts2_len = length(X_cluster{ci}{tsi});
             
-            [shift_idx1, shift_idx2, this_cc] = find_best_shift_limit(X_cluster{ci}{1}, X_cluster{ci}{tsi}, shift_lim_left, shift_lim_right);
+            % [shift_idx1, shift_idx2, this_cc] = find_best_shift_limit(X_cluster{ci}{1}, X_cluster{ci}{tsi}, shift_lim_left, shift_lim_right);
+            [shift_idx1, shift_idx2, this_cc] = find_best_shift_limit_c(X_cluster{ci}{1}, X_cluster{ci}{tsi}, shift_lim_left, shift_lim_right);
             cc(tsi-1, :) = this_cc;
             ws{tsi} = [];
             ws{tsi}(:, 1) = shift_idx1';

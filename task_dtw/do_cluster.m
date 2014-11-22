@@ -59,7 +59,15 @@ function [X_cluster, other_cluster] = do_cluster(X, num_cluster, method, figbase
             X_tmp = num2cell(X_tmp, 2);
             [affinity, tmp_ws] = get_affinity_mat(X_tmp, 'shift_coef');
             affinity_mat = squareform(affinity);
-            cluster_idx = spectral_cluster(affinity_mat);
+            % function [idx] = spectral_cluster(A,k,lap_opt,kmax)
+            %% lap_opt = 'rw', 'sym', 'unnormalized'
+            % cluster_idx = spectral_cluster(affinity_mat);
+            cluster_idx = spectral_cluster(affinity_mat, num_cluster, 'unnormalized');
+            % cluster_idx = spectral_cluster(affinity_mat, 0, 'sym');
+
+            if ~strcmp(figbase, '')
+                plot_affinity(affinity, [figbase '.affinity']);
+            end
         else
             error(['wrong method name: ' method])
         end
@@ -120,6 +128,34 @@ function plot_cluster_size(cluster_sizes, num_rows, figname)
     ylabel('CDF', 'FontSize', font_size);
 
     legend(legends, 'Location', 'SouthEast');
+    % legend(legends, 'Location', 'NorthEast');
+    print(fh, '-depsc', [figname '.eps']);
+end
+
+
+%% plot_affinity: function description
+function plot_affinity(affinity, figname)
+    font_size = 12;
+    colors   = {'r', 'b', [0 0.8 0], 'm', [1 0.85 0], [0 0 0.47], [0.45 0.17 0.48], 'k'};
+    lines    = {'-', '--'};
+    markers  = {'+', 'o', '*', '.', 'x', 's', 'd', '^', '>', '<', 'p', 'h'};
+
+    %% affinity
+    [f, x] = ecdf(affinity);
+
+    fh = figure(1); clf;
+    li = 1;
+    lh{li} = plot(x, f, '-x');
+    set(lh{li}, 'Color', colors{mod(li-1,length(colors))+1});
+    set(lh{li}, 'LineStyle', lines{mod(li-1,length(lines))+1});  %% line  : -|--|:|-.
+    set(lh{li}, 'LineWidth', 4);
+    set(lh{li}, 'MarkerSize', 5);
+
+    set(gca, 'FontSize', font_size);
+    xlabel('Affinity', 'FontSize', font_size);
+    ylabel('CDF', 'FontSize', font_size);
+
+    % legend(legends, 'Location', 'SouthEast');
     % legend(legends, 'Location', 'NorthEast');
     print(fh, '-depsc', [figname '.eps']);
 end
