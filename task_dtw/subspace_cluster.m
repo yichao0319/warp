@@ -1,12 +1,12 @@
 %% subspace_cluster
-function [cluster_idx, cluster_head] = subspace_cluster(X, num_cluster)
+function [cluster_idx, cluster_head] = subspace_cluster(X, num_cluster, method)
     addpath('./c_func');
 
     shift_lim_left  = 1/3;
     shift_lim_right = 2/3;
     num_rows = length(X);
-    % best_cc_thresh = min(0.8, 1-40/num_rows);
-    best_cc_thresh = 0.1;
+    best_cc_thresh = min(0.8, 1-40/num_rows);
+    % best_cc_thresh = 0.2;
 
     
     tmp = randperm(num_rows);
@@ -19,7 +19,14 @@ function [cluster_idx, cluster_head] = subspace_cluster(X, num_cluster)
         for tsi = 1:num_rows
             if tsi == seed_idx, continue; end
 
-            [shift_idx1, shift_idx2, this_cc] = find_best_shift_limit_c(X{seed_idx}, X{tsi}, shift_lim_left, shift_lim_right);
+            if strcmp(method, 'shift')
+                [shift_idx1, shift_idx2, this_cc] = find_best_shift_limit_c(X{seed_idx}, X{tsi}, shift_lim_left, shift_lim_right);
+            elseif strcmp(method, 'stretch')
+                [shift_idx1, shift_idx2, this_cc] = find_best_stretch(X{seed_idx}, X{tsi});
+            else
+                error(['wrong subspace method: ' method]);
+            end
+                    
             cc(tsi) = max(this_cc);
         end
 

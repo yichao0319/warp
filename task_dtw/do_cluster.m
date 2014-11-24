@@ -70,8 +70,10 @@ function [X_cluster, other_cluster] = do_cluster(X, num_cluster, method, figbase
                 plot_affinity(affinity, [figbase '.affinity']);
             end
 
-        elseif strcmp(method, 'subspace')
-            [cluster_idx, cluster_head] = subspace_cluster(X, num_cluster);
+        elseif strcmp(method, 'subspace_shift')
+            [cluster_idx, cluster_head] = subspace_cluster(X, num_cluster, 'shift');
+        elseif strcmp(method, 'subspace_stretch')
+            [cluster_idx, cluster_head] = subspace_cluster(X, num_cluster, 'stretch');
             
         else
             error(['wrong method name: ' method])
