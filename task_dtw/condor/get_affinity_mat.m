@@ -59,11 +59,15 @@ function [affinity_X, ws] = get_shift_cc_mat(X)
         for fj = fi+1:nr
             cnt = cnt + 1;
             % cc = my_corrcoef(X{fi}', X{fj}');
-            [shift_idx1, shift_idx2, total_cc] = find_best_shift_limit(X{fi}, X{fj}, lim_left, lim_right);
+            % [shift_idx1, shift_idx2, total_cc] = find_best_shift_limit(X{fi}, X{fj}, lim_left, lim_right);
+            [shift_idx1, shift_idx2, total_cc] = find_best_shift_limit_c(X{fi}, X{fj}, lim_left, lim_right);
             cc = max(total_cc);
             if isnan(cc)
                 cc = -1;
             end
+            % cc = round(cc) * 100;
+            % cc = round(cc / 0.2) * 100;
+            
             affinity_X(cnt) = cc;
             ws{fi, fj} = 1;
         end

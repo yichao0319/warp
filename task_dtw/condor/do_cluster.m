@@ -9,6 +9,7 @@ function [X_cluster, other_cluster] = do_cluster(X, num_cluster, method, figbase
 
 
     other_cluster = {};
+    cluster_head = [];
     
 
     if num_cluster == Inf
@@ -59,33 +60,67 @@ function [X_cluster, other_cluster] = do_cluster(X, num_cluster, method, figbase
             X_tmp = num2cell(X_tmp, 2);
             [affinity, tmp_ws] = get_affinity_mat(X_tmp, 'shift_coef');
             affinity_mat = squareform(affinity);
-            cluster_idx = spectral_cluster(affinity_mat);
+            % function [idx] = spectral_cluster(A,k,lap_opt,kmax)
+            %% lap_opt = 'rw', 'sym', 'unnormalized'
+            % cluster_idx = spectral_cluster(affinity_mat);
+            cluster_idx = spectral_cluster(affinity_mat, num_cluster, 'unnormalized');
+            % cluster_idx = spectral_cluster(affinity_mat, 0, 'sym');
 
             if ~strcmp(figbase, '')
                 plot_affinity(affinity, [figbase '.affinity']);
             end
+
+        elseif strcmp(method, 'subspace')
+            [cluster_idx, cluster_head] = subspace_cluster(X, num_cluster);
+            
         else
             error(['wrong method name: ' method])
         end
     end
 
-    uniq_cluster_idx = unique(cluster_idx);
+    %% only use cluster idx > 0
+    % uniq_cluster_idx = unique(cluster_idx);
+    uniq_cluster_idx = unique(cluster_idx(find(cluster_idx>0)));
     num_cluster = length(uniq_cluster_idx);
     num_rows    = length(X);
+
+    if length(cluster_head) == 0
+        cluster_head = ones(1, num_cluster);
+        for ci = 1:num_cluster
+            idx = find(cluster_idx == uniq_cluster_idx(ci));
+            cluster_head(ci) = idx(1);
+        end
+    end
+
     for ci = 1:num_cluster
         idx = find(cluster_idx == uniq_cluster_idx(ci));
         cluster_sizes(ci) = length(idx);
+
+        %% cluster head
+        X_cluster{ci}{1} = X{cluster_head(ci)};
+        if nargin >= 5
+            for oi = 1:length(other_mat)
+                other_cluster{oi}{ci}{1} = other_mat{oi}{cluster_head(ci)};
+            end
+        end
+        idx = idx(idx ~= cluster_head(ci));
+        fprintf('  cluster %d head = %d\n', ci, cluster_head(ci));
+
+        %% other member
         for iidx = 1:length(idx)
-            X_cluster{ci}{iidx} = X{idx(iidx)};
+
+
+            X_cluster{ci}{iidx+1} = X{idx(iidx)};
             
             % M_cluster{ci}{iidx} = M{idx(iidx)};
             if nargin >= 5
                 % other_cluster = {};
                 for oi = 1:length(other_mat)
-                    other_cluster{oi}{ci}{iidx} = other_mat{oi}{idx(iidx)};
+                    other_cluster{oi}{ci}{iidx+1} = other_mat{oi}{idx(iidx)};
                 end
             end
         end
+        % size(X_cluster{ci})
     end
 
 

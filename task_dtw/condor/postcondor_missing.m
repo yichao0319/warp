@@ -2,16 +2,24 @@
 function postcondor_missing()
     input_dir = '~/warp/condor_data/task_dtw/condor/do_missing_exp/';
 
-    trace_names = {'abilene', 'geant', 'wifi', '3g', '1ch-csi', 'cister', 'cu', 'multi-ch-csi', 'ucsb', 'umich', 'p300', '4sq', 'blink'};
+    % , 'multi-ch-csi', 'blink'
+    trace_names = {'abilene', 'geant', 'wifi', '3g', '1ch-csi', 'cister', 'cu', 'ucsb', 'umich', 'p300', '4sq'};
+    % trace_names = {'ucsb'};
+
 
     % warp_methods = {'na' 'dtw', 'shift', 'stretch'};
     warp_methods = {'shift_limit'};
     warp_opt = 'num_seg=1';
 
+    eval_opts = {'no_dup=1'};
+
     % cluster_methods = {'kmeans'};
     % num_clusters = [1];
-    cluster_methods = {'spectral_shift_cc'};
-    num_clusters = [0];
+    % cluster_methods = {'spectral_shift_cc'};
+    % num_clusters = [0];
+    cluster_methods = {'subspace'};
+    num_clusters = [1000];
+
     
     rank_seg = 1;
     rank_percnetile = 0.8;
@@ -19,7 +27,7 @@ function postcondor_missing()
     rank_opt = ['percentile=' num2str(rank_percnetile) ',num_seg=' num2str(rank_seg) ',r_method=' num2str(rank_cluster_method)];
 
     elem_frac  = 1;
-    loss_rates = [0.01 0.05 0.1 0.15 0.2 0.4];
+    loss_rates = [0.01 0.05 0.1 0.15 0.2];
     elem_mode  = 'elem';
     loss_mode  = 'ind';
     burst_size = 1;
@@ -38,7 +46,7 @@ function postcondor_missing()
     %% plot line: 
     %%   x axis: loss rates
     %%   lines: cluster method, w/ or w/o shift
-    arrange_line_clust_warp(input_dir, './figs_missing/', trace_names, cluster_methods, num_clusters, warp_methods, warp_opt, rank_opt, elem_frac, loss_rates, elem_mode, loss_mode, burst_size, init_esti_methods, final_esti_methods, seeds, 'line_clust_warp');
+    arrange_line_clust_warp(input_dir, './figs_missing/', trace_names, cluster_methods, num_clusters, warp_methods, warp_opt, rank_opt, elem_frac, loss_rates, elem_mode, loss_mode, burst_size, init_esti_methods, final_esti_methods, eval_opts, seeds, 'line_clust_warp');
 
 end
 
@@ -67,6 +75,7 @@ function [warp_mae_mean, warp_mae_std, orig_mae_mean, orig_mae_std] = get_result
             ret(1, cnt) = data(1);  %% w/ warp
             ret(2, cnt) = data(2);  %% w/o warp
             % ret(3, cnt) = data(3);  %% w/o warp 2
+            fprintf('  orig=%f, warp=%f\n', data(2), data(1));
         end
     end %% end seed
 
@@ -85,6 +94,7 @@ function [warp_mae_mean, warp_mae_std, orig_mae_mean, orig_mae_std] = get_result
         % orig_mae_mean2 = 0;
         % orig_mae_std2  = 0;
     end
+
 end
 
 
@@ -93,27 +103,31 @@ end
 %% plot line: 
 %%   x axis: loss rates
 %%   lines: cluster method, w/ or w/o shift
-function arrange_line_clust_warp(input_dir, output_dir, trace_names, cluster_methods, num_clusters, warp_methods, warp_opt, rank_opt, elem_frac, loss_rates, elem_mode, loss_mode, burst_size, init_esti_methods, final_esti_methods, seeds, fig_prefix)
+function arrange_line_clust_warp(input_dir, output_dir, trace_names, cluster_methods, num_clusters, warp_methods, warp_opt, rank_opt, elem_frac, loss_rates, elem_mode, loss_mode, burst_size, init_esti_methods, final_esti_methods, eval_opts, seeds, fig_prefix)
     
     for trace_name = trace_names
         trace_name = char(trace_name);
         trace_opt = get_trace_opt(trace_name);
 
-        for init_esti_method = init_esti_methods
-            init_esti_method = char(init_esti_method);
-            for final_esti_method = final_esti_methods
-                final_esti_method = char(final_esti_method);
+        for eval_opt = eval_opts
+            eval_opt = char(eval_opt);
 
-                figname = [output_dir fig_prefix '.' trace_name '.' trace_opt '.' rank_opt '.elem' num2str(elem_frac) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method];
-                plot_line_clust_warp(input_dir, trace_name, trace_opt, cluster_methods, num_clusters, warp_methods, warp_opt, rank_opt, elem_frac, loss_rates, elem_mode, loss_mode, burst_size, init_esti_method, final_esti_method, seeds, figname);
+            for init_esti_method = init_esti_methods
+                init_esti_method = char(init_esti_method);
+                for final_esti_method = final_esti_methods
+                    final_esti_method = char(final_esti_method);
 
+                    figname = [output_dir fig_prefix '.' trace_name '.' trace_opt '.' rank_opt '.elem' num2str(elem_frac) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.' eval_opt];
+                    plot_line_clust_warp(input_dir, trace_name, trace_opt, cluster_methods, num_clusters, warp_methods, warp_opt, rank_opt, elem_frac, loss_rates, elem_mode, loss_mode, burst_size, init_esti_method, final_esti_method, eval_opt, seeds, figname);
+
+                end
             end
         end
     end
 end
 
 %% plot_warp_rank: function description
-function plot_line_clust_warp(input_dir, trace_name, trace_opt, cluster_methods, num_clusters, warp_methods, warp_opt, rank_opt, elem_frac, loss_rates, elem_mode, loss_mode, burst_size, init_esti_method, final_esti_method, seeds, figname)
+function plot_line_clust_warp(input_dir, trace_name, trace_opt, cluster_methods, num_clusters, warp_methods, warp_opt, rank_opt, elem_frac, loss_rates, elem_mode, loss_mode, burst_size, init_esti_method, final_esti_method, eval_opt, seeds, figname)
 
     fh = figure; clf;
     font_size = 16;
@@ -134,9 +148,10 @@ function plot_line_clust_warp(input_dir, trace_name, trace_opt, cluster_methods,
                 for li = 1:length(loss_rates) 
                     loss_rate = loss_rates(li);
 
-                    basename = [input_dir trace_name '.' trace_opt '.' cluster_method '.c' num2str(num_cluster) '.' warp_method '.' warp_opt '.' rank_opt '.elem' num2str(elem_frac) '.lr' num2str(loss_rate) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method];
+                    basename = [input_dir trace_name '.' trace_opt '.' rank_opt '.elem' num2str(elem_frac) '.lr' num2str(loss_rate) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.' cluster_method '.c' num2str(num_cluster) '.' warp_method '.' warp_opt '.' eval_opt];
                     fprintf([basename '\n']);
                     [warp_mae_mean, warp_mae_std, orig_mae_mean, orig_mae_std] = get_results(basename, seeds);
+                    % fprintf('  orig=%f(%f), warp=%f(%f)\n', orig_mae_mean, orig_mae_std, warp_mae_mean, warp_mae_std);
 
                     num_compare = 2;
                     ret_mean((line_cnt-1)*num_compare+1, li) = orig_mae_mean;

@@ -1,20 +1,3 @@
-/**
- * Copyright (C) 2013 Quan Wang <wangq10@rpi.edu>,
- * Signal Analysis and Machine Perception Laboratory,
- * Department of Electrical, Computer, and Systems Engineering,
- * Rensselaer Polytechnic Institute, Troy, NY 12180, USA
- */
-
-/** 
- * This is the C/MEX code of dynamic time warping of two signals
- *
- * compile: 
- *     mex dtw_c.c
- *
- * usage:
- *     d=dtw_c(s,t)  or  d=dtw_c(s,t,w)
- *     where s is signal 1, t is signal 2, w is window parameter 
- */
 
 #include "mex.h"
 #include <stdlib.h>
@@ -64,7 +47,12 @@ double corrcoef_c(double *ts1, double *ts2, int n)
     num = (cnt * xysum) - (xsum * ysum);
     deno = (cnt * xsqr_sum - xsum * xsum) * (cnt * ysqr_sum - ysum * ysum);
 
-    return (num / sqrt(deno));
+    if(deno == 0) {
+        return -1;
+    }
+    else {
+        return (num / sqrt(deno));
+    }
 }
 
 
