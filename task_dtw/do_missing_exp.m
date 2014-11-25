@@ -12,6 +12,11 @@
 %% - loss_rate: 0.1
 %% - elem_mode: 'elem'
 %% - loss_mode: 'ind'
+%% - cluster_opt:
+%%   > num_cluster
+%%   > head_type
+%%     > 0: random
+%%     > 1: max corrcoef
 %% - warp_opt: 
 %%   > num_seg
 %% - eval_opt:
@@ -20,13 +25,13 @@
 %%     > 1: only evaluate non-duplicate part
 %%
 %% e.g.
-%%   [mae, mae_orig] = do_missing_exp('test_sine_shift', 'na', 'percentile=0.8,num_seg=1,r_method=1', 1, 0.1, 'elem', 'ind', 1, 'na', 'lens', 'kmeans', 1, 'shift', 'num_seg=1', 'no_dup=0', 1);
-%%   [mae, mae_orig] = do_missing_exp('p300', 'subject=1,session=1,img_idx=0', 'percentile=0.8,num_seg=1,r_method=1', 1, 0.1, 'elem', 'ind', 1, 'na', 'lens', 'kmeans', 1, 'shift', 'num_seg=1', 'no_dup=0', 1);
-function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
+%%   [maes] = do_missing_exp('test_sine_shift', 'na', 'percentile=0.8,num_seg=1,r_method=1', 1, 0.1, 'elem', 'ind', 1, 'na', 'lens', 'kmeans', 'num_cluster=1,head_type=0', 'shift', 'num_seg=1', 'no_dup=0', 1);
+%%   [maes] = do_missing_exp('p300', 'subject=1,session=1,img_idx=0', 'percentile=0.8,num_seg=1,r_method=1', 1, 0.1, 'elem', 'ind', 1, 'na', 'lens', 'kmeans', 'num_cluster=1,head_type=0', 'shift', 'num_seg=1', 'no_dup=0', 1);
+function [maes] = do_missing_exp(trace_name, trace_opt, ...
                 rank_opt, ...
                 elem_frac, loss_rate, elem_mode, loss_mode, burst_size, ...
                 init_esti_method, final_esti_method, ...
-                cluster_method, num_cluster, ...
+                cluster_method, cluster_opt, ...
                 warp_method, warp_opt, ...
                 eval_opt, ...
                 seed)
@@ -54,15 +59,6 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
 
     if DEBUG3, figbase = ['./tmp/' trace_name];
     else, figbase = ['/u/yichao/warp/condor_data/task_dtw/condor/do_missing_exp.fig/' trace_name]; end
-
-
-    %% --------------------------
-    %% Input parameters
-    % if num_cluster < 0
-    %     num_cluster = Inf;
-    % end
-    %% END Input parameters
-    %% --------------------------
 
 
     %% --------------------
@@ -127,7 +123,7 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     other_mat{4} = revX_est;
     other_cluster = {};
 
-    [X_cluster, other_cluster] = do_cluster(X_est, num_cluster, cluster_method, figbase, other_mat);
+    [X_cluster, other_cluster] = do_cluster(X_est, cluster_method, cluster_opt, figbase, other_mat);
     fprintf('  # cluster: %d\n', length(X_cluster));
 
 
@@ -179,6 +175,11 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
 
     X_est = do_estimate(X_warp, M_warp, final_esti_method, est_opt);
     X_orig_est = do_estimate(my_cell2mat(X), M, final_esti_method, est_opt);
+    X_svd_base_est = do_estimate(my_cell2mat(X), M, 'svd_base', est_opt);
+    X_svd_base_knn_est = do_estimate(my_cell2mat(X), M, 'svd_base_knn', est_opt);
+    X_srmf_est = do_estimate(my_cell2mat(X), M, 'srmf', est_opt);
+    X_srmf_knn_est = do_estimate(my_cell2mat(X), M, 'srmf_knn', est_opt);
+    X_knn_est = do_estimate(my_cell2mat(X), M, 'knn', est_opt);
 
 
     %% --------------------
@@ -207,8 +208,13 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
 
     end
 
-    mae = calculate_mae(X_orig, X_est, M_warp);
-    mae_orig = calculate_mae(my_cell2mat(X), X_orig_est, revM_orig);
+    maes(1) = calculate_mae(X_orig, X_est, M_warp);
+    maes(2) = calculate_mae(my_cell2mat(X), X_orig_est, revM_orig);
+    maes(3) = calculate_mae(my_cell2mat(X), X_svd_base_est, revM_orig);
+    maes(4) = calculate_mae(my_cell2mat(X), X_svd_base_knn_est, revM_orig);
+    maes(5) = calculate_mae(my_cell2mat(X), X_srmf_est, revM_orig);
+    maes(6) = calculate_mae(my_cell2mat(X), X_srmf_knn_est, revM_orig);
+    maes(7) = calculate_mae(my_cell2mat(X), X_knn_est, revM_orig);
 
 
     if DEBUG3
@@ -236,7 +242,7 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     end
 
     % TRACE_NAME.TRACE_OPT.RANK_OPT.elemELEM_FRAC.lrLOSS_RATE.ELEM_MODE.LOSS_MODE.BURST_SIZE.INIT_ESTI_METHOD.FINAL_ESTI_METHOD.CLUST_METHOD.cNUM_CLUST.WARP_METHOD.WARP_OPT.EVAL_OPT.sSEED
-    dlmwrite([output_dir trace_name '.' trace_opt '.' rank_opt '.elem' num2str(elem_frac) '.lr' num2str(loss_rate) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.' cluster_method '.c' num2str(num_cluster) '.' warp_method '.' warp_opt '.' eval_opt '.s' num2str(seed) '.txt'], [mae, mae_orig]);
+    dlmwrite([output_dir trace_name '.' trace_opt '.' rank_opt '.elem' num2str(elem_frac) '.lr' num2str(loss_rate) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.' cluster_method '.' cluster_opt '.' warp_method '.' warp_opt '.' eval_opt '.s' num2str(seed) '.txt'], maes);
 end
 
 

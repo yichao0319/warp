@@ -1,12 +1,18 @@
 %% do_cluster: function description
-function [X_cluster, other_cluster] = do_cluster(X, num_cluster, method, figbase, other_mat)
+%% - cluster_opt:
+%%   > num_cluster
+%%   > head_type
+%%     > 0: random
+%%     > 1: max corrcoef
+function [X_cluster, other_cluster] = do_cluster(X, method, cluster_opt, figbase, other_mat)
     addpath('/u/yichao/warp/git_repository/utils/spectral_cluster');
 
-    if nargin < 2, num_cluster = 1; end
-    if nargin < 3, method = 'kmeans'; end
+    if nargin < 2, method = 'kmeans'; end
+    if nargin < 3, cluster_opt = ''; end
     if nargin < 4, figbase = ''; end
     if nargin < 5, other_mat = {}; end
 
+    [num_cluster, head_type] = get_cluster_opt(cluster_opt);
 
     other_cluster = {};
     cluster_head = [];
@@ -71,10 +77,11 @@ function [X_cluster, other_cluster] = do_cluster(X, num_cluster, method, figbase
             end
 
         elseif strcmp(method, 'subspace_shift')
-            [cluster_idx, cluster_head] = subspace_cluster(X, num_cluster, 'shift');
+            [cluster_idx, cluster_head] = subspace_cluster(X, num_cluster, 'shift', head_type);
+
         elseif strcmp(method, 'subspace_stretch')
-            [cluster_idx, cluster_head] = subspace_cluster(X, num_cluster, 'stretch');
-            
+            [cluster_idx, cluster_head] = subspace_cluster(X, num_cluster, 'stretch', head_type);
+
         else
             error(['wrong method name: ' method])
         end
@@ -131,6 +138,20 @@ function [X_cluster, other_cluster] = do_cluster(X, num_cluster, method, figbase
     if ~strcmp(figbase, '')
         plot_cluster_size(cluster_sizes, num_rows, [figbase '.clust_size']);
     end
+end
+
+
+%% get_dtw_opt: function description
+function [num_cluster, head_type] = get_cluster_opt(opt)
+    num_cluster = 1;
+    head_type = 0;
+    if nargin < 1, return; end
+
+    opts = regexp(opt, ',', 'split');
+    for this_opt = opts
+        eval([char(this_opt) ';']);
+    end
+
 end
 
 
