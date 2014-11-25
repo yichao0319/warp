@@ -18,7 +18,7 @@ function [align_ts, align_other] = align_cluster(ts, ws, other_mat)
         for tsi = 2:length(ts)
             % ws{tsi}(:,1)'
             % tsi
-            
+
             orig_ws_len = size(ws{tsi}, 1);
             idx = find(ws{tsi}(:,1) == ti);
             this_num = length(idx);
