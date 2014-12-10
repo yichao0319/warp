@@ -68,11 +68,21 @@ function [idx] = spectral_cluster(A,k,lap_opt,kmax)
   
   if (k <= 0)
     % automatically select k based on the eigengap heuristic
-    k = get_num_clusters(L,kmax);
+    k2 = get_num_clusters(L,kmax);
+
+    if (k == -1)
+      %% min k = 2
+      fprintf('use minimal number of clusters = 2\n');
+      k = max(2, k2);
+    else
+      k = k2;
+    end
   end
-  
+
+
   % find eigenvectors corresponding to k smallest eigenvalues
   [V,ev] = eigs(L,k,'SR');
+  % [V,ev] = eigs(L,k,'SA');
   
   % normalization for L_sym
   if (strcmpi(lap_opt,'sym'))
