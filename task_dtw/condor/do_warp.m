@@ -2,6 +2,8 @@
 function [X_warp, other_warp] = do_warp(X_cluster, warp_method, opt, other_mat, figbase)
     DEBUG_TIME = 0;
 
+    if nargin < 3, opt = ''; end
+    if nargin < 4, other_mat = {}; end
     if nargin < 5, figbase = ''; end
     
 

@@ -3,6 +3,9 @@
 function [dtw_ts, dtw_other] = do_dtw(ts, opt, other_mat)
     DEBUG_TIME = 0;
 
+    if nargin < 2, opt = ''; end
+    if nargin < 3, other_mat = {}; end
+
     dtw_other = {};
 
     num_seg = get_dtw_opt(opt);

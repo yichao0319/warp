@@ -277,6 +277,28 @@ function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
         bin = 1;
         alpha = 1000;
         lambda = 0.00001;
+
+    elseif strcmp(trace_name, 'test3')
+        fs = 32;
+        wavlen1 = 1;
+        x1 = [0:wavlen1/fs:5*wavlen1];
+        k1 = 2*pi/wavlen1;
+        wavlen2 = 3;
+        k2 = 2*pi/wavlen2;
+        
+        nr = 10; X = [];
+        for ri = 1:nr
+            X = [X; rand(1)*4*sin(k1*x1 + rand(1)*pi)];
+        end
+        nr = 5;
+        for ri = 1:nr
+            X = [X; rand(1)*4*sin(k2*x1 + rand(1)*pi)];
+        end
+
+        r = 2;
+        bin = 1;
+        alpha = 1000;
+        lambda = 0.00001;
     
     end
 

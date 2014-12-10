@@ -15,7 +15,7 @@
 %%   do_exp('test_sine_shift', 'na', 'percentile=0.8,num_seg=1,r_method=1', 1, 'kmeans', 'dtw', 'num_seg=1');
 function [r] = do_exp(trace_name, trace_opt, ...
                 rank_opt, ...
-                num_cluster, cluster_method, ...
+                cluster_method, cluster_opt, ...
                 warp_method, warp_opt)
     addpath('./c_func');
     addpath('/u/yichao/lens/utils/compressive_sensing');
@@ -44,15 +44,7 @@ function [r] = do_exp(trace_name, trace_opt, ...
     else, figbase = ''; end
 
 
-    %% --------------------------
-    %% Input parameters
-    % if num_cluster < 0
-    %     num_cluster = Inf;
-    % end
-    %% END Input parameters
-    %% --------------------------
-
-
+    
     %% --------------------
     %% load data
     %% --------------------
@@ -84,7 +76,7 @@ function [r] = do_exp(trace_name, trace_opt, ...
     other_mat{2} = X;
     other_cluster = {};
 
-    [X_cluster, other_cluster] = do_cluster(X, num_cluster, cluster_method, figbase, other_mat);
+    [X_cluster, other_cluster] = do_cluster(X, cluster_method, cluster_opt, figbase, other_mat);
     fprintf('  # cluster: %d\n', length(X_cluster));
     
 
@@ -105,6 +97,6 @@ function [r] = do_exp(trace_name, trace_opt, ...
     if DEBUG3, plot_ts(X_warp, ['./tmp/' trace_name '.' warp_method]); end
 
 
-    dlmwrite([output_dir trace_name '.' trace_opt '.' cluster_method '.c' num2str(num_cluster) '.' warp_method '.' rank_opt '.txt'], r);
+    dlmwrite([output_dir trace_name '.' trace_opt '.' cluster_method '.' cluster_opt '.' warp_method '.' rank_opt '.txt'], r);
     
 end

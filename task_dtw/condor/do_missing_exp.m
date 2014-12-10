@@ -12,6 +12,24 @@
 %% - loss_rate: 0.1
 %% - elem_mode: 'elem'
 %% - loss_mode: 'ind'
+%% - cluster_opt:
+%%   > num_cluster
+%%   > head_type
+%%     > rand
+%%     > coef
+%%     > dist
+%%     > worst
+%%   > sync_type
+%%     > na
+%%     > shift
+%%     > stretch
+%%     > dtw
+%%   > metric_type
+%%     > dist: euclidean distance
+%%     > dtw_dist: DTW distance
+%%     > coef
+%%     > graph
+%%   > sigma
 %% - warp_opt: 
 %%   > num_seg
 %% - eval_opt:
@@ -20,13 +38,12 @@
 %%     > 1: only evaluate non-duplicate part
 %%
 %% e.g.
-%%   [mae, mae_orig] = do_missing_exp('test_sine_shift', 'na', 'percentile=0.8,num_seg=1,r_method=1', 1, 0.1, 'elem', 'ind', 1, 'na', 'lens', 'kmeans', 1, 'shift', 'num_seg=1', 'no_dup=0', 1);
-%%   [mae, mae_orig] = do_missing_exp('p300', 'subject=1,session=1,img_idx=0', 'percentile=0.8,num_seg=1,r_method=1', 1, 0.1, 'elem', 'ind', 1, 'na', 'lens', 'kmeans', 1, 'shift', 'num_seg=1', 'no_dup=0', 1);
-function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
+%%   [maes] = do_missing_exp('test_sine_shift', 'na', 'percentile=0.8,num_seg=1,r_method=1', 1, 0.1, 'elem', 'ind', 1, 'na', 'lens', 'kmeans', 'num_cluster=1,head_type=rand,sync_type=na,metric_type=coef', 'shift', 'num_seg=1', 'no_dup=0', 1);
+function [maes] = do_missing_exp(trace_name, trace_opt, ...
                 rank_opt, ...
                 elem_frac, loss_rate, elem_mode, loss_mode, burst_size, ...
                 init_esti_method, final_esti_method, ...
-                cluster_method, num_cluster, ...
+                cluster_method, cluster_opt, ...
                 warp_method, warp_opt, ...
                 eval_opt, ...
                 seed)
@@ -37,10 +54,10 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     %% DEBUG
     %% --------------------
     DEBUG0 = 0;
-    DEBUG1 = 1;
-    DEBUG2 = 1;
-    DEBUG3 = 1;
-    DEBUG4 = 1;  %% results
+    DEBUG1 = 0;
+    DEBUG2 = 0;
+    DEBUG3 = 0;
+    DEBUG4 = 0;  %% results
 
 
     %% --------------------
@@ -49,20 +66,11 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     rand('seed', seed);
     randn('seed', seed);
 
-    output_dir = '../../processed_data/task_dtw/do_missing_exp/';
-    % output_dir = '/u/yichao/warp/condor_data/task_dtw/condor/do_missing_exp/';
+    % output_dir = '../../processed_data/task_dtw/do_missing_exp/';
+    output_dir = '/u/yichao/warp/condor_data/task_dtw/condor/do_missing_exp/';
 
     if DEBUG3, figbase = ['./tmp/' trace_name];
     else, figbase = ['/u/yichao/warp/condor_data/task_dtw/condor/do_missing_exp.fig/' trace_name]; end
-
-
-    %% --------------------------
-    %% Input parameters
-    % if num_cluster < 0
-    %     num_cluster = Inf;
-    % end
-    %% END Input parameters
-    %% --------------------------
 
 
     %% --------------------
@@ -95,11 +103,11 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     %% 2. label all elements with original index
     %% --------------------
     drop_idx = find(M == 0);
-    invM = zeros(size(M));
-    invM(drop_idx) = 1:length(drop_idx);
+    revM = zeros(size(M));
+    revM(drop_idx) = 1:length(drop_idx);
 
     tmp = size(X_drop);
-    invX = reshape(1:prod(size(X_drop)), tmp(2), tmp(1))';
+    revX = reshape(1:prod(size(X_drop)), tmp(2), tmp(1))';
     
 
     %% --------------------
@@ -111,8 +119,8 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     tmp = do_estimate(X_drop, M, init_esti_method, est_opt);
     X_est = num2cell(tmp, 2);
     M_est = num2cell(M, 2);
-    invM_est = num2cell(invM, 2);
-    invX_est = num2cell(invX, 2);
+    revM_est = num2cell(revM, 2);
+    revX_est = num2cell(revX, 2);
 
     
     %% --------------------
@@ -123,11 +131,11 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     other_mat = {};
     other_mat{1} = M_est;
     other_mat{2} = X;
-    other_mat{3} = invM_est;
-    other_mat{4} = invX_est;
+    other_mat{3} = revM_est;
+    other_mat{4} = revX_est;
     other_cluster = {};
 
-    [X_cluster, other_cluster] = do_cluster(X_est, num_cluster, cluster_method, figbase, other_mat);
+    [X_cluster, other_cluster] = do_cluster(X_est, cluster_method, cluster_opt, figbase, other_mat);
     fprintf('  # cluster: %d\n', length(X_cluster));
 
 
@@ -144,99 +152,116 @@ function [mae, mae_orig] = do_missing_exp(trace_name, trace_opt, ...
     other_cluster = {};
 
     [X_warp, other_cluster] = do_warp(X_cluster, warp_method, warp_opt, other_mat, figbase);
-    X_warp = cluster2mat(X_warp);
-    M_warp = cluster2mat(other_cluster{1});
-    X_orig = cluster2mat(other_cluster{2});
-    invM_warp = cluster2mat(other_cluster{3});
-    invX_warp = cluster2mat(other_cluster{4});
-
-    if DEBUG3
-        fprintf('  NaN in X = %d, # missing in M = %d\n', nnz(isnan(X_warp)), length(find(M_warp == 0)));
-        fprintf('    same location? %d\n', ~nnz((isnan(X_warp) - ~M_warp)) );
-        fprintf('  NaN in X = %d, # missing in invM = %d\n', nnz(isnan(X_warp)), length(find(invM_warp > 0)));
-        fprintf('    same location? %d\n', ~nnz((isnan(X_warp) - min(invM_warp,1)) ));
-    end
 
 
     %% --------------------
-    %% estimation
+    %% estimation of original matrix
     %% --------------------
-    if DEBUG2, fprintf('final estimation\n'); end
-
-    %% ----------
-    %% DEBUG
-    %% only work on partial matrix
-    % lim_left  = 1/3;
-    % lim_right = 2/3;
-    % idx_left  = ceil(size(X_warp, 2) * lim_left);
-    % idx_right = floor(size(X_warp, 2) * lim_right);
-    % X_warp = X_warp(:, idx_left:idx_right);
-    % M_warp = M_warp(:, idx_left:idx_right);
-    % X_orig = X_orig(:, idx_left:idx_right);
-    % invM_warp = invM_warp(:, idx_left:idx_right);
-    % invX_warp = invX_warp(:, idx_left:idx_right);
-    %% ----------
-
-    X_est = do_estimate(X_warp, M_warp, final_esti_method, est_opt);
     X_orig_est = do_estimate(my_cell2mat(X), M, final_esti_method, est_opt);
+    % X_svd_base_est = do_estimate(my_cell2mat(X), M, 'svd_base', est_opt);
+    % X_svd_base_knn_est = do_estimate(my_cell2mat(X), M, 'svd_base_knn', est_opt);
+    % X_srmf_est = do_estimate(my_cell2mat(X), M, 'srmf', est_opt);
+    % X_srmf_knn_est = do_estimate(my_cell2mat(X), M, 'srmf_knn', est_opt);
+    % X_knn_est = do_estimate(my_cell2mat(X), M, 'knn', est_opt);
+
+    maes(1) = 0;
+    maes(2) = 0;
+
+    for ci = 1:length(X_warp)
+        this_X_warp = my_cell2mat(X_warp{ci});
+        this_M_warp = my_cell2mat(other_cluster{1}{ci});
+        this_X_orig = my_cell2mat(other_cluster{2}{ci});
+        this_revM_warp = my_cell2mat(other_cluster{3}{ci});
+        this_revX_warp = my_cell2mat(other_cluster{4}{ci});
+
+        % X_warp = cluster2mat(X_warp);
+        % M_warp = cluster2mat(other_cluster{1});
+        % X_orig = cluster2mat(other_cluster{2});
+        % revM_warp = cluster2mat(other_cluster{3});
+        % revX_warp = cluster2mat(other_cluster{4});
+
+        if DEBUG3
+            fprintf('  NaN in X = %d, # missing in M = %d\n', nnz(isnan(this_X_warp)), length(find(this_M_warp == 0)));
+            fprintf('    same location? %d\n', ~nnz((isnan(this_X_warp) - ~this_M_warp)) );
+            fprintf('  NaN in X = %d, # missing in revM = %d\n', nnz(isnan(this_X_warp)), length(find(this_revM_warp > 0)));
+            fprintf('    same location? %d\n', ~nnz((isnan(this_X_warp) - min(this_revM_warp,1)) ));
+        end
 
 
-    %% --------------------
-    %% evaluate
-    %% --------------------
-    if DEBUG2, fprintf('evaluate\n'); end
-
-    no_dup = get_eval_opt(eval_opt);
-    if no_dup == 1
         %% --------------------
-        %% only evaluate missing elements without being duplicate
-        invM_cnt = histc(invM_warp(:), 1:max(invM_warp(:)));
-        no_dup_M_idx = find(invM_cnt == 1);
-        M_warp = ~ismember(invM_warp, no_dup_M_idx);
-
-        invM_orig = ~ismember(invM, no_dup_M_idx);
-
-    elseif no_dup == 2
+        %% estimation
         %% --------------------
-        %% XXX: evaluate duplicate missing elements with avg
-        
-    else
-        %% estimate without warping
-        invM_ind = invM_warp(find(invM_warp > 0));
-        invM_orig = ~ismember(invM, invM_ind);
+        if DEBUG2, fprintf('final estimation\n'); end
 
-    end
-
-    mae = calculate_mae(X_orig, X_est, M_warp);
-    mae_orig = calculate_mae(my_cell2mat(X), X_orig_est, invM_orig);
+        X_est = do_estimate(this_X_warp, this_M_warp, final_esti_method, est_opt);
 
 
-    if DEBUG3
-        fprintf('  size of X: %dx%d\n', size(X_est));
-        fprintf('  size of M: %dx%d\n', size(M_warp));
-        fprintf('  size of invM: %dx%d\n', size(invM_warp));
-        fprintf('  size of invM_orig: %dx%d\n', size(invM_orig));
-        fprintf('  # missing = %d (%f)\n', nnz(~M_warp), nnz(~M_warp) / prod(size(M_warp)));
-        tmp = length(unique(invM_warp(find(invM_warp > 0))));
-        fprintf('  # missing (invM) = %d, # unique = %d\n', length(find(invM_warp > 0)), tmp);
-        fprintf('  # missing (invM_orig) = %d\n', nnz(~invM_orig));
+        %% --------------------
+        %% evaluate
+        %% --------------------
+        if DEBUG2, fprintf('evaluate\n'); end
 
-        tmp  = {}; tmp{1}  = num2cell(X_warp, 2);
-        tmp2 = {}; tmp2{1} = num2cell(X_orig, 2);
-        tmp3 = {}; tmp3{1} = num2cell(M_warp, 2);
-        plot_missing_ts(tmp, tmp2, tmp3, ['./tmp/' trace_name '.missing']);
-        tmp  = {}; tmp{1}  = num2cell(X_est, 2);
-        tmp2 = {}; tmp2{1} = num2cell(X_orig, 2);
-        tmp3 = {}; tmp3{1} = num2cell(M_warp, 2);
-        plot_missing_ts(tmp, tmp2, tmp3, ['./tmp/' trace_name '.est']);
-        tmp  = {}; tmp{1}  = num2cell(X_orig_est, 2);
-        tmp2 = {}; tmp2{1} = X;
-        tmp3 = {}; tmp3{1} = num2cell(invM_orig, 2);
-        plot_missing_ts(tmp, tmp2, tmp3, ['./tmp/' trace_name '.est_orig']);
-    end
+        no_dup = get_eval_opt(eval_opt);
+        if no_dup == 1
+            %% --------------------
+            %% only evaluate missing elements without being duplicate
+            revM_cnt = histc(this_revM_warp(:), 1:max(this_revM_warp(:)));
+            no_dup_M_idx = find(revM_cnt == 1);
+            this_M_warp = ~ismember(this_revM_warp, no_dup_M_idx);
+
+            revM_orig = ~ismember(revM, no_dup_M_idx);
+
+        elseif no_dup == 2
+            %% --------------------
+            %% XXX: evaluate duplicate missing elements with avg
+            
+        else
+            %% estimate without warping
+            revM_ind = this_revM_warp(find(this_revM_warp > 0));
+            revM_orig = ~ismember(revM, revM_ind);
+
+        end
+
+        maes(1) = maes(1) + calculate_mae(this_X_orig, X_est, this_M_warp);
+        maes(2) = maes(2) + calculate_mae(my_cell2mat(X), X_orig_est, revM_orig);
+        % maes(3) = calculate_mae(my_cell2mat(X), X_svd_base_est, revM_orig);
+        % maes(4) = calculate_mae(my_cell2mat(X), X_svd_base_knn_est, revM_orig);
+        % maes(5) = calculate_mae(my_cell2mat(X), X_srmf_est, revM_orig);
+        % maes(6) = calculate_mae(my_cell2mat(X), X_srmf_knn_est, revM_orig);
+        % maes(7) = calculate_mae(my_cell2mat(X), X_knn_est, revM_orig);
+
+
+        if DEBUG3
+            fprintf('  size of X: %dx%d\n', size(X_est));
+            fprintf('  size of M: %dx%d\n', size(this_M_warp));
+            fprintf('  size of revM: %dx%d\n', size(this_revM_warp));
+            fprintf('  size of revM_orig: %dx%d\n', size(revM_orig));
+            fprintf('  # missing = %d (%f)\n', nnz(~this_M_warp), nnz(~this_M_warp) / prod(size(this_M_warp)));
+            tmp = length(unique(this_revM_warp(find(this_revM_warp > 0))));
+            fprintf('  # missing (revM) = %d, # unique = %d\n', length(find(this_revM_warp > 0)), tmp);
+            fprintf('  # missing (revM_orig) = %d\n', nnz(~revM_orig));
+
+            tmp  = {}; tmp{1}  = num2cell(this_X_warp, 2);
+            tmp2 = {}; tmp2{1} = num2cell(this_X_orig, 2);
+            tmp3 = {}; tmp3{1} = num2cell(this_M_warp, 2);
+            plot_missing_ts(tmp, tmp2, tmp3, ['./tmp/' trace_name '.missing']);
+            tmp  = {}; tmp{1}  = num2cell(X_est, 2);
+            tmp2 = {}; tmp2{1} = num2cell(this_X_orig, 2);
+            tmp3 = {}; tmp3{1} = num2cell(this_M_warp, 2);
+            plot_missing_ts(tmp, tmp2, tmp3, ['./tmp/' trace_name '.est']);
+            tmp  = {}; tmp{1}  = num2cell(X_orig_est, 2);
+            tmp2 = {}; tmp2{1} = X;
+            tmp3 = {}; tmp3{1} = num2cell(revM_orig, 2);
+            plot_missing_ts(tmp, tmp2, tmp3, ['./tmp/' trace_name '.est_orig']);
+        end
+    end %% END for estimate/evaluate each cluster
+
+    maes(1) = maes(1) / length(X_warp);
+    maes(2) = maes(2) / length(X_warp);
+
 
     % TRACE_NAME.TRACE_OPT.RANK_OPT.elemELEM_FRAC.lrLOSS_RATE.ELEM_MODE.LOSS_MODE.BURST_SIZE.INIT_ESTI_METHOD.FINAL_ESTI_METHOD.CLUST_METHOD.cNUM_CLUST.WARP_METHOD.WARP_OPT.EVAL_OPT.sSEED
-    dlmwrite([output_dir trace_name '.' trace_opt '.' rank_opt '.elem' num2str(elem_frac) '.lr' num2str(loss_rate) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.' cluster_method '.c' num2str(num_cluster) '.' warp_method '.' warp_opt '.' eval_opt '.s' num2str(seed) '.txt'], [mae, mae_orig]);
+    dlmwrite([output_dir trace_name '.' trace_opt '.' rank_opt '.elem' num2str(elem_frac) '.lr' num2str(loss_rate) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.' cluster_method '.' cluster_opt '.' warp_method '.' warp_opt '.' eval_opt '.s' num2str(seed) '.txt'], maes);
 end
 
 

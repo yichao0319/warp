@@ -5,6 +5,19 @@ function [X_est] = do_estimate(X, M, esti_method, est_opt)
     if strcmp(esti_method, 'lens')
         [X_est, x, y, z] = wrap_lens(X, M, r);
 
+    elseif strcmp(esti_method, 'svd_base')
+        epsilon = 0.01;
+
+        X_est = wrap_svd_base(X, M, r, epsilon);
+
+    elseif strcmp(esti_method, 'svd_base_knn')
+        epsilon = 0.01;
+        maxDist = 3;
+        EPS = 1e-3;
+
+        X_est = wrap_svd_base(X, M, r, epsilon);
+        X_est = wrap_knn(X_est, X, M, maxDist, EPS);
+
     elseif strcmp(esti_method, 'srmf')
         epsilon = 0.01;
         period = 1;
@@ -47,7 +60,15 @@ function [r, alpha, lambda] = get_est_opt(opt)
 
     opts = regexp(opt, ',', 'split');
     for this_opt = opts
-        eval([char(this_opt) ';']);
+        values = regexp(this_opt, '=', 'split');
+        values = values{1};
+        [ret, status] = str2num(values{2});
+
+        if status > 0
+            eval([char(this_opt) ';']);
+        else
+            assignin('base', values{1}, values{2});
+        end
     end
 
 end
@@ -131,4 +152,15 @@ function [X_est] = wrap_knn(X_est, X, M, maxDist, EPS)
     end
 
     X_est = Z;
+end
+
+
+%% functionname: function description
+function [X_est] = wrap_svd_base(X, M, r, epsilon)
+    r = min([r, size(X)]);
+    [A, b] = XM2Ab(X, M);
+    BaseX = EstimateBaseline(A, b, size(X));
+    [u,v,w] = FactTensorACLS(X-BaseX, r, M, false, epsilon, 50, 1e-8, 0);
+
+    X_est = tensorprod(u,v,w) + BaseX;
 end
