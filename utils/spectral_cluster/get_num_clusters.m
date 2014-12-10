@@ -30,5 +30,6 @@ function [k] = get_num_clusters(L,kmax)
   end
 
   ev     = eigs(L,kmax,'SR');
+  % ev     = eigs(L,kmax,'SA');
   egap   = diff(sort(ev));
   [eg,k] = max(egap);
