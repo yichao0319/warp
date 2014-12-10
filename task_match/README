@@ -1,0 +1,13 @@
+match_sound.m [delete]
+    test: do MFCC, DTW, and classify testing word to the class with minimal DTW distance
+
+test_sound.m [delete]
+    test: get speech_word trace and combine different/same words together to calculate the rank
+
+get_trace_word.m [delete]
+    used by test_sound.m to get speech_word trace and combine different/same words together
+
+match_single.m
+    get data in 3D format, seperate to training and testing, DTW and classification
+
+match_group.m
