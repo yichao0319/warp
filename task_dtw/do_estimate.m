@@ -60,7 +60,15 @@ function [r, alpha, lambda] = get_est_opt(opt)
 
     opts = regexp(opt, ',', 'split');
     for this_opt = opts
-        eval([char(this_opt) ';']);
+        values = regexp(this_opt, '=', 'split');
+        values = values{1};
+        [ret, status] = str2num(values{2});
+
+        if status > 0
+            eval([char(this_opt) ';']);
+        else
+            assignin('base', values{1}, values{2});
+        end
     end
 
 end

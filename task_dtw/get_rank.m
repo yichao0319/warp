@@ -6,6 +6,8 @@
 %%   > 1: fill in shorter clusters with 0s
 %%   > 2: sum of the ranks of each cluster
 function r = get_rank(X_cluster, opt)
+    if nargin < 2, opt = ''; end
+
     [percentile, num_seg, method] = get_rank_opt(opt);
 
     if method == 1

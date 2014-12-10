@@ -1,11 +1,12 @@
 %% subspace_cluster
 %% - head_type
-%%   > 0: random
-%%   > 1: max corrcoef
-function [cluster_idx, cluster_head] = subspace_cluster(X, num_cluster, method, head_type)
+%%   > random
+%%   > best
+%%   > worst
+function [cluster_idx, cluster_head, cluster_affinity] = subspace_cluster(X, num_cluster, method, head_type)
     addpath('./c_func');
 
-    if nargin < 4, head_type = 1; end
+    if nargin < 4, head_type = 'best'; end
 
 
     shift_lim_left  = 1/3;
@@ -48,12 +49,18 @@ function [cluster_idx, cluster_head] = subspace_cluster(X, num_cluster, method, 
     [val, select_ss_idx] = max(subspace_coef);
     cluster_idx = zeros(1, num_rows);
     cluster_idx(subspace_idx{select_ss_idx}) = 1;
-    if head_type == 0
+    if strcmp(head_type, 'random')
         %% rand
         cluster_head(1) = subspace_idx{select_ss_idx}(end);
-    elseif head_type == 1
+        cluster_affinity(1) = subspace_coef(select_ss_idx);
+    elseif strcmp(head_type, 'best')
         %% max corrcoef
         cluster_head(1) = subspace_idx{select_ss_idx}(1);
+        cluster_affinity(1) = subspace_coef(select_ss_idx); %% XXX: fix
+    elseif strcmp(head_type, 'worst')
+        %% max corrcoef
+        cluster_head(1) = subspace_idx{select_ss_idx}(end);
+        cluster_affinity(1) = subspace_coef(select_ss_idx); %% XXX: fix
     else
         error(['wrong input of head_type: ' num2str(head_type)]);
     end
