@@ -2,7 +2,9 @@
 %% Yi-Chao@UT Austin
 %%
 %% match_single:
-%%   get data in 3D format, seperate to training and testing, DTW and classification
+%%   get data in 3D format (user, feature, time), 
+%%   seperate to training and testing, 
+%%   run DTW and classification
 %%
 %% e.g.
 %% ====================================
@@ -13,20 +15,20 @@ function [accuracy, classification] = match_single(trace_name, trace_opt, divide
     addpath('/v/filer4b/v27q002/ut-wireless/yichao/warp/git_repository/task_dtw');
 
     DEBUG0 = 0;
-    DEBUG1 = 0;
-    DEBUG2 = 0;  %% progress
+    DEBUG1 = 1;
+    DEBUG2 = 1;  %% progress
     DEBUG3 = 0;  %% basic info
-    DEBUG4 = 0;  %% process info
+    DEBUG4 = 1;  %% process info
     DEBUG5 = 0;  %% final output
-    DEBUG6 = 0;  %% show frequency shift
+    DEBUG6 = 1;  %% show frequency shift
 
     if nargin < 1, trace_name = 'word'; end
     if nargin < 2, trace_opt = 'feature=''mfcc'''; end
     if nargin < 3, divide_opt = 'ratio=0.5'; end
     if nargin < 4, seed = 1; end
 
-    % output_dir = '../../processed_data/task_match/match_single/';
-    output_dir = '/u/yichao/warp/condor_data/task_match/condor/match_single/';
+    output_dir = '../../processed_data/task_match/match_single/';
+    % output_dir = '/u/yichao/warp/condor_data/task_match/condor/match_single/';
 
     rand('seed', seed);
     randn('seed', seed);

@@ -60,5 +60,5 @@ for seed in ${seeds[@]}; do
 done ## end seed
 
 
-condor_submit_dag -maxjobs ${num_jobs} tmp.${func}.dag
+#condor_submit_dag -maxjobs ${num_jobs} tmp.${func}.dag
 

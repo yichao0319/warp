@@ -16,13 +16,13 @@ my $DEBUG3 = 1; ## print output
 #############
 # Constants
 #############
-my $VALIDATE = "validate_err_test_match.sh";
+my $VALIDATE = "validate_err_match_group.sh";
 my $RERUN    = "rerun.sh";
 
 #############
 # Variables
 #############
-my $max_jobs = 40;
+my $max_jobs = 70;
 my @priority = ("1.condor", "condor_submit");
 my $remain_jobs = 1;
 

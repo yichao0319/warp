@@ -1,6 +1,6 @@
-%% postcondor_test_match: function description
-function postcondor_test_match()
-    input_dir = '~/warp/condor_data/task_match/condor/test_match/';
+%% postcondor_match_single: function description
+function postcondor_match_single()
+    input_dir = '~/warp/condor_data/task_match/condor/match_single/';
     trace_names = {'word', 'deap1', 'deap2', 'acc-chest', 'acc-wrist1', 'acc-wrist2', 'acc-wrist3'};
 
     %% trace opt: depends on trace
@@ -16,9 +16,9 @@ function postcondor_test_match()
     %% plot line: 
     %%   x axis: loss rates
     %%   lines: interpolation methods
-    compare_line_trace_opt(input_dir, './figs_test_match/', trace_names, train_ratios, seeds, 'line_trace_opt');
+    compare_line_trace_opt(input_dir, './figs_match_single/', trace_names, train_ratios, seeds, 'line_trace_opt');
 
-    plot_classification(input_dir, './figs_test_match/', trace_names, train_ratios, seeds, 'table_class');
+    plot_classification(input_dir, './figs_match_single/', trace_names, train_ratios, seeds, 'table_class');
 
 end
 
