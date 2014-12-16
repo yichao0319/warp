@@ -1,3 +1,14 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Yi-Chao Chen @ UT Austin
+%%
+%% kmeans
+%% 1. randomly select k cluster heads
+%% 2. while(true)
+%% 3.   subjects join the cluster with maximal similarity to its head
+%% 4.   remove cluster with #members < thresh
+%% 5.   re-select the heads which have maximal avg similarity to all members
+%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [cluster_idx, cluster_head, cluster_affinity] = my_kmeans(num_cluster, affinity)
     DEBUG3 = 1;
 

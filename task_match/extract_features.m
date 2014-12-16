@@ -2,14 +2,23 @@
 %% Yi-Chao Chen @ UT Austin
 %%
 %% - Input:
-%%
+%%   - X: the 3D data
+%%        1st dim (cell): subjects / words / ...
+%%        2nd dim (matrix): features
+%%        3rd dim (matrix): samples over time
+%%   - gt_class: vector of ground-truth class 
+%%        the class the word/subject belongs to.
+%%        always labeled as 1, 2, 3, ...
+%%   - opt:
+%%     > num: ratio of features. 
+%%       - num < 0: use all features
+%%       - num = 0: use the best number
+%%     > sync: shift, stretch
+%%     > metric: coeff, dist
 %%
 %% - Output:
+%%   - X_feature: same as X, but only has the selected features
 %%
-%%
-%% e.g.
-%%
-%%     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [X_feature] = extract_features(X, gt_class, opt)

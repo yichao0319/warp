@@ -2,12 +2,18 @@
 %% Yi-Chao Chen @ UT Austin
 %%
 %% - Input:
-%%
+%%   - X: the 3D data
+%%        1st dim (cell): subjects / words / ...
+%%        2nd dim (matrix): features
+%%        3rd dim (matrix): samples over time
+%%   - sync: na, shift, stretch
+%%   - metric: coeff, dist
+%%   - aff_type: mat, vec
 %%
 %% - Output:
-%%
-%%
-%% e.g.
+%%   - affinity: the affinity matrix 
+%%       a_ij: the similarity of subject i and j 
+%%             (sync j toward i if sync is not 'na')
 %%
 %%     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,13 +1,25 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Yi-Chao Chen @ UT Austin
 %%
-%% - Input:
+%% cal_cluster_obj
+%%   calculate the objective function with given features.
+%%   obj = mean(inter-cluster-similarity) / intra-cluster-similarity
+%%      the smaller value means the better seperation of clusters so is the better
 %%
+%% - Input:
+%%   - X: the 3D data
+%%        1st dim (cell): subjects / words / ...
+%%        2nd dim (matrix): features
+%%        3rd dim (matrix): samples over time
+%%   - gt_class: vector of ground-truth class 
+%%        the class the word/subject belongs to.
+%%        always labeled as 1, 2, 3, ...
+%%   - opt:
+%%     > sync: shift, stretch
+%%     > metric: coeff, dist
 %%
 %% - Output:
-%%
-%%
-%% e.g.
+%%   - obj
 %%
 %%     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -12,9 +12,11 @@
 %%        - metric: coeff, dist
 %%        - num: number of cluster
 %% - Output:
-%%
-%%
-%% e.g.
+%%   - X_cluster: a 4D cell containing the clusters of an activity
+%%       1st dim [cell]: clusters
+%%       2nd dim [cell]: subjects/words (the first one is the head of the cluster)
+%%       3rd dim [matrix]: features 
+%%       4th dim [matrix]: time
 %%
 %%     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

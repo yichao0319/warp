@@ -1,3 +1,6 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Yi-Chao Chen @ UT Austin
+%%
 %% get_trace_match
 %%
 %% Output
@@ -9,6 +12,7 @@
 %%        the class the word/subject belongs to.
 %%        always labeled as 1, 2, 3, ...
 %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [X, gt_class] = get_trace_match(trace_name, trace_opt)
     DEBUG2 = 1;
 

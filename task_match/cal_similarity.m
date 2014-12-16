@@ -17,11 +17,8 @@
 %%       - metric: coeff, dist
 %%
 %% - Output:
+%%   - similarity: the similarity to the class, the larger the better
 %%
-%%
-%% e.g.
-%%
-%%     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [similarity] = cal_similarity(ts, X_cluster, opt)

@@ -47,7 +47,10 @@
 %%     > metric: coeff, dist
 %%
 %% - Output:
-%%
+%%   - accuracy: the classification accuracy for the testing data
+%%   - classification: a 2D matrix 
+%%       c_ij: the number that class i subjects are classified as class j
+%%   - 2 files
 %%
 %% e.g.
 %%   match_group('word', 'feature=''mfcc''', 'num=-1', 'ratio=0.5', 'method=''kmeans'',num=1', 'sync=''na'',metric=''coeff''', 1)

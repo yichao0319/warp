@@ -1,3 +1,5 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 
 %% get_trace_match_word:
 %% Output
 %%   - X: the 3D data
@@ -7,6 +9,8 @@
 %%   - gt_class: vector of ground-truth class 
 %%        the class the word belongs to.
 %%        always labeled as 1, 2, 3, ...
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [X, gt_class] = get_trace_match_word(opt)
     addpath('/v/filer4b/v27q002/ut-wireless/yichao/warp/git_repository/task_dtw');
 
