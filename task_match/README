@@ -11,3 +11,16 @@ match_single.m
     get data in 3D format, seperate to training and testing, DTW and classification
 
 match_group.m
+    1. get data in 2D format
+        user 1,feature 1: time series
+        ...
+        user 1,feature n: time series
+        user 2,feature 1: time series
+        ...
+        user 2,feature n: time series
+        ...
+    2. find dominating features:
+        project data points to each feature and apply greedy search
+    3. in training data, cluster users in the same class/activity, and find cluster head
+    4. in testing data, calculate distance to each cluster and choose the one with minimal distance as the distance of the class.
+    5. the testing data is classified to the one with minimal distance

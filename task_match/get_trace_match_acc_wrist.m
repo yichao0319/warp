@@ -1,15 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Yi-Chao Chen @ UT Austin
-%%
-%% - Input:
-%%
-%%
-%% - Output:
-%%
-%%
-%% e.g.
-%%
-%%     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [X, gt_class] = get_trace_match_acc_wrist(opt)
@@ -105,7 +95,7 @@ function [X, gt_class] = get_trace_match_acc_wrist(opt)
             X{tsi} = X{tsi} - min(X{tsi});
             X{tsi} = X{tsi} / max(X{tsi});
         end
-    elseif strcmp(feature, 'percentile')
+    elseif strcmp(feature, 'quantization')
         X = raw_X;
         for tsi = 1:length(raw_X)
             for ri = 1:size(raw_X{tsi}, 1)
@@ -114,7 +104,7 @@ function [X, gt_class] = get_trace_match_acc_wrist(opt)
                 X{tsi}(ri, :) = floor(X{tsi}(ri, :) / step);
             end
         end
-    elseif strcmp(feature, 'mag_percentile')
+    elseif strcmp(feature, 'mag_quantization')
         for tsi = 1:length(raw_X)
             % X{tsi} = mean(raw_X{tsi}, 1);
             X{tsi} = sqrt(raw_X{tsi}(1,:).^2 + raw_X{tsi}(2,:).^2 + raw_X{tsi}(3,:).^2);
@@ -139,7 +129,7 @@ function [X, gt_class] = get_trace_match_acc_wrist(opt)
             X{tsi} = U_lr * S_lr * V_lr';
         end
 
-    elseif strcmp(feature, 'lowrank_percentile')
+    elseif strcmp(feature, 'lowrank_quantization')
         X = raw_X;
         for tsi = 1:length(raw_X)
             for ri = 1:size(raw_X{tsi}, 1)
