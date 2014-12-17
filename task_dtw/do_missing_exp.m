@@ -15,7 +15,7 @@
 %% - cluster_opt:
 %%   > num_cluster
 %%   > head_type
-%%     > rand
+%%     > random
 %%     > coef
 %%     > dist
 %%     > worst
@@ -25,12 +25,12 @@
 %%     > stretch
 %%     > dtw
 %%   > metric_type
-%%     > dist: euclidean distance
-%%     > dtw_dist: DTW distance
+%%     > dist: 2-norm
 %%     > coef
+%%     > dtw_dist: DTW distance
 %%     > graph
 %%   > sigma
-%% - warp_opt: 
+%% - sync_opt: 
 %%   > num_seg
 %% - eval_opt:
 %%   > no_dup
@@ -38,13 +38,13 @@
 %%     > 1: only evaluate non-duplicate part
 %%
 %% e.g.
-%%   [maes] = do_missing_exp('test_sine_shift', 'na', 'percentile=0.8,num_seg=1,r_method=1', 1, 0.1, 'elem', 'ind', 1, 'na', 'lens', 'kmeans', 'num_cluster=1,head_type=rand,sync_type=na,metric_type=coef', 'shift', 'num_seg=1', 'no_dup=0', 1);
+%%   [maes] = do_missing_exp('test_sine_shift', 'na', 'percentile=0.8,num_seg=1,r_method=1', 1, 0.1, 'elem', 'ind', 1, 'na', 'lens', 'kmeans', 'num_cluster=1,head_type=''random'',sync_type=''na'',metric_type=''coef''', 'shift', 'num_seg=1', 'no_dup=0', 1);
 function [maes] = do_missing_exp(trace_name, trace_opt, ...
                 rank_opt, ...
                 elem_frac, loss_rate, elem_mode, loss_mode, burst_size, ...
                 init_esti_method, final_esti_method, ...
                 cluster_method, cluster_opt, ...
-                warp_method, warp_opt, ...
+                sync_method, sync_opt, ...
                 eval_opt, ...
                 seed)
     addpath('./c_func');
@@ -99,8 +99,8 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
 
 
     %% --------------------
-    %% 1. label all missing elements with 1,2,3,...,#drop
-    %% 2. label all elements with original index
+    %% - revM: label all missing elements with 1,2,3,...,#drop
+    %% - revX: label all elements with original index
     %% --------------------
     drop_idx = find(M == 0);
     revM = zeros(size(M));
@@ -140,9 +140,9 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
 
 
     %% --------------------
-    %% warping
+    %% synchronization
     %% --------------------
-    if DEBUG2, fprintf('warping\n'); end
+    if DEBUG2, fprintf('synchronization\n'); end
 
     other_mat = {};
     other_mat{1} = other_cluster{1};
@@ -151,7 +151,7 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
     other_mat{4} = other_cluster{4};
     other_cluster = {};
 
-    [X_warp, other_cluster] = do_warp(X_cluster, warp_method, warp_opt, other_mat, figbase);
+    [X_sync, other_cluster] = do_sync(X_cluster, sync_method, sync_opt, other_mat, figbase);
 
 
     %% --------------------
@@ -167,24 +167,24 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
     maes(1) = 0;
     maes(2) = 0;
 
-    for ci = 1:length(X_warp)
-        this_X_warp = my_cell2mat(X_warp{ci});
-        this_M_warp = my_cell2mat(other_cluster{1}{ci});
+    for ci = 1:length(X_sync)
+        this_X_sync = my_cell2mat(X_sync{ci});
+        this_M_sync = my_cell2mat(other_cluster{1}{ci});
         this_X_orig = my_cell2mat(other_cluster{2}{ci});
-        this_revM_warp = my_cell2mat(other_cluster{3}{ci});
-        this_revX_warp = my_cell2mat(other_cluster{4}{ci});
+        this_revM_sync = my_cell2mat(other_cluster{3}{ci});
+        this_revX_sync = my_cell2mat(other_cluster{4}{ci});
 
-        % X_warp = cluster2mat(X_warp);
-        % M_warp = cluster2mat(other_cluster{1});
+        % X_sync = cluster2mat(X_sync);
+        % M_sync = cluster2mat(other_cluster{1});
         % X_orig = cluster2mat(other_cluster{2});
-        % revM_warp = cluster2mat(other_cluster{3});
-        % revX_warp = cluster2mat(other_cluster{4});
+        % revM_sync = cluster2mat(other_cluster{3});
+        % revX_sync = cluster2mat(other_cluster{4});
 
         if DEBUG3
-            fprintf('  NaN in X = %d, # missing in M = %d\n', nnz(isnan(this_X_warp)), length(find(this_M_warp == 0)));
-            fprintf('    same location? %d\n', ~nnz((isnan(this_X_warp) - ~this_M_warp)) );
-            fprintf('  NaN in X = %d, # missing in revM = %d\n', nnz(isnan(this_X_warp)), length(find(this_revM_warp > 0)));
-            fprintf('    same location? %d\n', ~nnz((isnan(this_X_warp) - min(this_revM_warp,1)) ));
+            fprintf('  NaN in X = %d, # missing in M = %d\n', nnz(isnan(this_X_sync)), length(find(this_M_sync == 0)));
+            fprintf('    same location? %d\n', ~nnz((isnan(this_X_sync) - ~this_M_sync)) );
+            fprintf('  NaN in X = %d, # missing in revM = %d\n', nnz(isnan(this_X_sync)), length(find(this_revM_sync > 0)));
+            fprintf('    same location? %d\n', ~nnz((isnan(this_X_sync) - min(this_revM_sync,1)) ));
         end
 
 
@@ -193,7 +193,7 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
         %% --------------------
         if DEBUG2, fprintf('final estimation\n'); end
 
-        X_est = do_estimate(this_X_warp, this_M_warp, final_esti_method, est_opt);
+        X_est = do_estimate(this_X_sync, this_M_sync, final_esti_method, est_opt);
 
 
         %% --------------------
@@ -205,9 +205,9 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
         if no_dup == 1
             %% --------------------
             %% only evaluate missing elements without being duplicate
-            revM_cnt = histc(this_revM_warp(:), 1:max(this_revM_warp(:)));
+            revM_cnt = histc(this_revM_sync(:), 1:max(this_revM_sync(:)));
             no_dup_M_idx = find(revM_cnt == 1);
-            this_M_warp = ~ismember(this_revM_warp, no_dup_M_idx);
+            this_M_sync = ~ismember(this_revM_sync, no_dup_M_idx);
 
             revM_orig = ~ismember(revM, no_dup_M_idx);
 
@@ -216,13 +216,13 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
             %% XXX: evaluate duplicate missing elements with avg
             
         else
-            %% estimate without warping
-            revM_ind = this_revM_warp(find(this_revM_warp > 0));
+            %% estimate without sync
+            revM_ind = this_revM_sync(find(this_revM_sync > 0));
             revM_orig = ~ismember(revM, revM_ind);
 
         end
 
-        maes(1) = maes(1) + calculate_mae(this_X_orig, X_est, this_M_warp);
+        maes(1) = maes(1) + calculate_mae(this_X_orig, X_est, this_M_sync);
         maes(2) = maes(2) + calculate_mae(my_cell2mat(X), X_orig_est, revM_orig);
         % maes(3) = calculate_mae(my_cell2mat(X), X_svd_base_est, revM_orig);
         % maes(4) = calculate_mae(my_cell2mat(X), X_svd_base_knn_est, revM_orig);
@@ -233,21 +233,21 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
 
         if DEBUG3
             fprintf('  size of X: %dx%d\n', size(X_est));
-            fprintf('  size of M: %dx%d\n', size(this_M_warp));
-            fprintf('  size of revM: %dx%d\n', size(this_revM_warp));
+            fprintf('  size of M: %dx%d\n', size(this_M_sync));
+            fprintf('  size of revM: %dx%d\n', size(this_revM_sync));
             fprintf('  size of revM_orig: %dx%d\n', size(revM_orig));
-            fprintf('  # missing = %d (%f)\n', nnz(~this_M_warp), nnz(~this_M_warp) / prod(size(this_M_warp)));
-            tmp = length(unique(this_revM_warp(find(this_revM_warp > 0))));
-            fprintf('  # missing (revM) = %d, # unique = %d\n', length(find(this_revM_warp > 0)), tmp);
+            fprintf('  # missing = %d (%f)\n', nnz(~this_M_sync), nnz(~this_M_sync) / prod(size(this_M_sync)));
+            tmp = length(unique(this_revM_sync(find(this_revM_sync > 0))));
+            fprintf('  # missing (revM) = %d, # unique = %d\n', length(find(this_revM_sync > 0)), tmp);
             fprintf('  # missing (revM_orig) = %d\n', nnz(~revM_orig));
 
-            tmp  = {}; tmp{1}  = num2cell(this_X_warp, 2);
+            tmp  = {}; tmp{1}  = num2cell(this_X_sync, 2);
             tmp2 = {}; tmp2{1} = num2cell(this_X_orig, 2);
-            tmp3 = {}; tmp3{1} = num2cell(this_M_warp, 2);
+            tmp3 = {}; tmp3{1} = num2cell(this_M_sync, 2);
             plot_missing_ts(tmp, tmp2, tmp3, ['./tmp/' trace_name '.missing']);
             tmp  = {}; tmp{1}  = num2cell(X_est, 2);
             tmp2 = {}; tmp2{1} = num2cell(this_X_orig, 2);
-            tmp3 = {}; tmp3{1} = num2cell(this_M_warp, 2);
+            tmp3 = {}; tmp3{1} = num2cell(this_M_sync, 2);
             plot_missing_ts(tmp, tmp2, tmp3, ['./tmp/' trace_name '.est']);
             tmp  = {}; tmp{1}  = num2cell(X_orig_est, 2);
             tmp2 = {}; tmp2{1} = X;
@@ -256,12 +256,12 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
         end
     end %% END for estimate/evaluate each cluster
 
-    maes(1) = maes(1) / length(X_warp);
-    maes(2) = maes(2) / length(X_warp);
+    maes(1) = maes(1) / length(X_sync);
+    maes(2) = maes(2) / length(X_sync);
 
 
-    % TRACE_NAME.TRACE_OPT.RANK_OPT.elemELEM_FRAC.lrLOSS_RATE.ELEM_MODE.LOSS_MODE.BURST_SIZE.INIT_ESTI_METHOD.FINAL_ESTI_METHOD.CLUST_METHOD.cNUM_CLUST.WARP_METHOD.WARP_OPT.EVAL_OPT.sSEED
-    dlmwrite([output_dir trace_name '.' trace_opt '.' rank_opt '.elem' num2str(elem_frac) '.lr' num2str(loss_rate) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.' cluster_method '.' cluster_opt '.' warp_method '.' warp_opt '.' eval_opt '.s' num2str(seed) '.txt'], maes);
+    % TRACE_NAME.TRACE_OPT.RANK_OPT.elemELEM_FRAC.lrLOSS_RATE.ELEM_MODE.LOSS_MODE.BURST_SIZE.INIT_ESTI_METHOD.FINAL_ESTI_METHOD.CLUST_METHOD.cNUM_CLUST.SYNC_METHOD.SYNC_OPT.EVAL_OPT.sSEED
+    dlmwrite([output_dir trace_name '.' trace_opt '.' rank_opt '.elem' num2str(elem_frac) '.lr' num2str(loss_rate) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.' cluster_method '.' cluster_opt '.' sync_method '.' sync_opt '.' eval_opt '.s' num2str(seed) '.txt'], maes);
 end
 
 

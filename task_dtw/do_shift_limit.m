@@ -1,8 +1,8 @@
-function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat, figbase)
+function [X_sync, other_sync] = do_shift_limit(X_cluster, other_mat, figbase)
     if nargin < 2, other_mat = {}; end
     if nargin < 3, figbase = ''; end
 
-    other_warp = {};
+    other_sync = {};
 
     shift_lim_left = 1/3;
     shift_lim_right = 2/3;
@@ -11,16 +11,16 @@ function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat, figbase)
 
     for ci = 1:length(X_cluster)
         if length(X_cluster{ci}) == 1
-            % X_warp{ci} = X_cluster{ci};
+            % X_sync{ci} = X_cluster{ci};
             ts1 = X_cluster{ci}{1};
             ts1_left  = max(1, floor(length(ts1)*shift_lim_left));
             ts1_right = min(length(ts1), ceil(length(ts1)*shift_lim_right));
-            X_warp{ci}{1} = ts1(ts1_left:ts1_right);
+            X_sync{ci}{1} = ts1(ts1_left:ts1_right);
 
             if nargin >= 2
                 for oi = 1:length(other_mat)
-                    % other_warp{oi}{ci} = other_mat{oi}{ci};
-                    other_warp{oi}{ci}{1} = other_mat{oi}{ci}{1}(ts1_left:ts1_right);
+                    % other_sync{oi}{ci} = other_mat{oi}{ci};
+                    other_sync{oi}{ci}{1} = other_mat{oi}{ci}{1}(ts1_left:ts1_right);
                 end
             end
             continue;
@@ -48,17 +48,17 @@ function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat, figbase)
         end
 
 
-        % [X_warp{ci}, M_warp{ci}] = align_cluster(X_cluster{ci}, ws, M_cluster{ci});
+        % [X_sync{ci}, M_sync{ci}] = align_cluster(X_cluster{ci}, ws, M_cluster{ci});
         tmp_other_mat = {};
         if nargin >= 2
             for oi = 1:length(other_mat)
                 tmp_other_mat{oi} = other_mat{oi}{ci};
             end
         end
-        [X_warp{ci}, tmp_other_warp] = align_cluster(X_cluster{ci}, ws, tmp_other_mat);
+        [X_sync{ci}, tmp_other_sync] = align_cluster(X_cluster{ci}, ws, tmp_other_mat);
         if nargin >= 2
-            for oi = 1:length(tmp_other_warp)
-                other_warp{oi}{ci} = tmp_other_warp{oi};
+            for oi = 1:length(tmp_other_sync)
+                other_sync{oi}{ci} = tmp_other_sync{oi};
             end
         end
 
@@ -74,7 +74,7 @@ function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat, figbase)
             % plot_best_cc(cc, range, ts2_len, [figbase '.do_shift.best_cc']);
 
             %% shouldn't run this for interpolation
-            % plot_rank_compare(X_cluster{ci}, ws, X_warp{ci}, [figbase '.do_shift.rank']);
+            % plot_rank_compare(X_cluster{ci}, ws, X_sync{ci}, [figbase '.do_shift.rank']);
         end
     end
 end
@@ -210,7 +210,7 @@ function plot_best_cc(cc, range, ts2_len, figname)
 end
 
 %% plot_rank_compare
-function plot_rank_compare(X_cluster, ws, X_warp, figname)
+function plot_rank_compare(X_cluster, ws, X_sync, figname)
     font_size = 12;
     colors   = {'r', 'b', [0 0.8 0], 'm', [1 0.85 0], [0 0 0.47], [0.45 0.17 0.48], 'k'};
     lines    = {'-', '--'};
@@ -228,9 +228,9 @@ function plot_rank_compare(X_cluster, ws, X_warp, figname)
     end
     %% ----------
 
-    tmp{1} = X_warp;
+    tmp{1} = X_sync;
     rank_opt = 'percentile=0.8,num_seg=1,r_method=1';
-    r_warp = get_rank(tmp, rank_opt);
+    r_sync = get_rank(tmp, rank_opt);
 
 
     %% every ts shift to the "tsi" row
@@ -261,7 +261,7 @@ function plot_rank_compare(X_cluster, ws, X_warp, figname)
     hold on;
 
     li = li + 1;
-    lh{li} = plot([r_warp r_warp], [0 1]);
+    lh{li} = plot([r_sync r_sync], [0 1]);
     set(lh{li}, 'Color', colors{mod(li-1,length(colors))+1});
     set(lh{li}, 'LineStyle', lines{mod(li-1,length(lines))+1});  %% line  : -|--|:|-.
     set(lh{li}, 'LineWidth', 4);

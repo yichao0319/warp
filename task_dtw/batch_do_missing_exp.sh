@@ -12,8 +12,8 @@
 ## - loss_rate: 0.1
 ## - elem_mode: 'elem'
 ## - loss_mode: 'ind'
-## - warp_opt: 
-## - warp_opt
+## - sync_opt: 
+## - sync_opt
 ##   > num_seg
 ##
 
@@ -25,7 +25,7 @@ trace_names=("abilene" "geant" "wifi" "3g" "1ch-csi" "cister" "cu" "multi-ch-csi
 # num_cluster=1
 cluster_method="spectral_cc"
 num_cluster=0
-warp_method="shift_limit"
+sync_method="shift_limit"
 
 for trace_name in ${trace_names[@]}; do
 
@@ -39,5 +39,5 @@ for trace_name in ${trace_names[@]}; do
         trace_opt="na"
     fi
     
-    matlab -r "[mae, mae_orig] = do_missing_exp('${trace_name}', '${trace_opt}', 'percentile=0.8,num_seg=1,r_method=1', 1, 0.1, 'elem', 'ind', 1, 'na', 'knn', ${num_cluster}, '${cluster_method}', '${warp_method}', 'num_seg=1', 1); exit;"
+    matlab -r "[mae, mae_orig] = do_missing_exp('${trace_name}', '${trace_opt}', 'percentile=0.8,num_seg=1,r_method=1', 1, 0.1, 'elem', 'ind', 1, 'na', 'knn', ${num_cluster}, '${cluster_method}', '${sync_method}', 'num_seg=1', 1); exit;"
 done

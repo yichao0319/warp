@@ -12,8 +12,7 @@
 %% - loss_rate: 0.1
 %% - elem_mode: 'elem'
 %% - loss_mode: 'ind'
-%% - warp_opt: 
-%% - warp_opt
+%% - sync_opt
 %%   > num_seg
 %%
 %% e.g.

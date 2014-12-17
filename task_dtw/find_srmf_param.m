@@ -61,7 +61,7 @@ function find_srmf_param(trace_name, trace_opt)
     lambda     = 1000;
 
     for alpha = alphas
-        mae = warp_srmf(X, M, r, alpha, lambda, epsilon, period);
+        mae = sync_srmf(X, M, r, alpha, lambda, epsilon, period);
         if mae < best_mae
             best_mae = mae;
             best_alpha = alpha;
@@ -82,7 +82,7 @@ function find_srmf_param(trace_name, trace_opt)
     alpha       = best_alpha;
 
     for lambda = lambdas
-        mae = warp_srmf(X, M, r, alpha, lambda, epsilon, period);
+        mae = sync_srmf(X, M, r, alpha, lambda, epsilon, period);
         if mae < best_mae
             best_mae = mae;
             best_lambda = lambda;
@@ -97,8 +97,8 @@ function find_srmf_param(trace_name, trace_opt)
 end
 
 
-%% warp_srmf: function description
-function [mae] = warp_srmf(X, M, r, alpha, lambda, epsilon, period)
+%% sync_srmf: function description
+function [mae] = sync_srmf(X, M, r, alpha, lambda, epsilon, period)
     [A, b] = XM2Ab(X, M);
     config = ConfigSRTF(A, b, X, M, size(X), r, r, epsilon, true, period);
     [u4, v4, w4] = SRTF(X, r, M, config, alpha, lambda, 50);

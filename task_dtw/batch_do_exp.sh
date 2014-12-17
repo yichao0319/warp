@@ -8,19 +8,19 @@
 ##   > r_method
 ##     > 1: fill in shorter clusters with 0s
 ##     > 2: sum of the ranks of each cluster
-## - warp_opt
+## - sync_opt
 ##   > num_seg
 ##
 ## function [r] = do_exp(trace_name, trace_opt, ...
 ##                rank_opt, ...
 ##                num_cluster, cluster_method, ...
-##                warp_method, warp_opt)
+##                sync_method, sync_opt)
 
 trace_names=("abilene" "geant" "wifi" "3g" "1ch-csi" "cister" "cu" "multi-ch-csi" "ucsb" "umich" "test_sine_shift" "test_sine_scale" "p300" "4sq" "blink")
 
 cluster_method="kmeans"
 num_cluster=1
-warp_method="shift_limit"
+sync_method="shift_limit"
 
 for trace_name in ${trace_names[@]}; do
 
@@ -34,5 +34,5 @@ for trace_name in ${trace_names[@]}; do
         trace_opt="na"
     fi
     
-    matlab -r "do_exp('${trace_name}', '${trace_opt}', 'percentile=0.8,num_seg=1,r_method=1', $num_cluster, '$cluster_method', '$warp_method', 'num_seg=1'); exit;"
+    matlab -r "do_exp('${trace_name}', '${trace_opt}', 'percentile=0.8,num_seg=1,r_method=1', $num_cluster, '$cluster_method', '$sync_method', 'num_seg=1'); exit;"
 done
