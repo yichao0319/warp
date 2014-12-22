@@ -1,6 +1,6 @@
 %% postcondor_warp: function description
 function postcondor_missing()
-    input_dir = '~/warp/condor_data/task_dtw/condor/check_mat_size_mae/';
+    input_dir = '~/warp/condor_data/task_miss/condor/check_mat_size_mae/';
 
     trace_names = {'abilene', 'geant', 'wifi', '3g', '1ch-csi', 'cister', 'cu', 'multi-ch-csi', 'ucsb', 'umich', 'test_sine_shift', 'test_sine_scale', 'p300', '4sq', 'blink'};
 

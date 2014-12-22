@@ -63,15 +63,17 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
     %% --------------------
     %% Variables
     %% --------------------
+    output_dir = '../../processed_data/task_miss/do_missing_exp/';
+    % output_dir = '/u/yichao/warp/condor_data/task_miss/condor/do_missing_exp/';
+
+    if DEBUG3, figbase = ['./tmp/' trace_name];
+    else, figbase = ['/u/yichao/warp/condor_data/task_miss/condor/do_missing_exp.fig/' trace_name]; end
+
+
     rand('seed', seed);
     randn('seed', seed);
 
-    output_dir = '../../processed_data/task_dtw/do_missing_exp/';
-    % output_dir = '/u/yichao/warp/condor_data/task_dtw/condor/do_missing_exp/';
-
-    if DEBUG3, figbase = ['./tmp/' trace_name];
-    else, figbase = ['/u/yichao/warp/condor_data/task_dtw/condor/do_missing_exp.fig/' trace_name]; end
-
+    
 
     %% --------------------
     %% load data
@@ -135,8 +137,11 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
     other_mat{4} = revX_est;
     other_cluster = {};
 
-    [X_cluster, other_cluster] = do_cluster(X_est, cluster_method, cluster_opt, figbase, other_mat);
+    [X_cluster, other_cluster, cluster_affinity] = do_cluster(X_est, cluster_method, cluster_opt, figbase, other_mat);
     fprintf('  # cluster: %d\n', length(X_cluster));
+    fprintf('    affinity: ');
+    fprintf('%f,', cluster_affinity);
+    fprintf('\n');
 
 
     %% --------------------
@@ -166,6 +171,7 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
 
     maes(1) = 0;
     maes(2) = 0;
+    est_collection = [];
 
     for ci = 1:length(X_sync)
         this_X_sync = my_cell2mat(X_sync{ci});
@@ -201,81 +207,27 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
         %% --------------------
         if DEBUG2, fprintf('evaluate\n'); end
 
-        no_dup = get_eval_opt(eval_opt);
-        if no_dup == 1
-            %% --------------------
-            %% only evaluate missing elements without being duplicate
-            revM_cnt = histc(this_revM_sync(:), 1:max(this_revM_sync(:)));
-            no_dup_M_idx = find(revM_cnt == 1);
-            this_M_sync = ~ismember(this_revM_sync, no_dup_M_idx);
+        est_collection = collect_estimation(this_X_orig, X_est, this_M_sync, this_revM_sync, ci, cluster_affinity(ci), est_collection);
 
-            revM_orig = ~ismember(revM, no_dup_M_idx);
-
-        elseif no_dup == 2
-            %% --------------------
-            %% XXX: evaluate duplicate missing elements with avg
-            
-        else
-            %% estimate without sync
-            revM_ind = this_revM_sync(find(this_revM_sync > 0));
-            revM_orig = ~ismember(revM, revM_ind);
-
-        end
-
-        maes(1) = maes(1) + calculate_mae(this_X_orig, X_est, this_M_sync);
-        maes(2) = maes(2) + calculate_mae(my_cell2mat(X), X_orig_est, revM_orig);
-        % maes(3) = calculate_mae(my_cell2mat(X), X_svd_base_est, revM_orig);
-        % maes(4) = calculate_mae(my_cell2mat(X), X_svd_base_knn_est, revM_orig);
-        % maes(5) = calculate_mae(my_cell2mat(X), X_srmf_est, revM_orig);
-        % maes(6) = calculate_mae(my_cell2mat(X), X_srmf_knn_est, revM_orig);
-        % maes(7) = calculate_mae(my_cell2mat(X), X_knn_est, revM_orig);
-
-
-        if DEBUG3
-            fprintf('  size of X: %dx%d\n', size(X_est));
-            fprintf('  size of M: %dx%d\n', size(this_M_sync));
-            fprintf('  size of revM: %dx%d\n', size(this_revM_sync));
-            fprintf('  size of revM_orig: %dx%d\n', size(revM_orig));
-            fprintf('  # missing = %d (%f)\n', nnz(~this_M_sync), nnz(~this_M_sync) / prod(size(this_M_sync)));
-            tmp = length(unique(this_revM_sync(find(this_revM_sync > 0))));
-            fprintf('  # missing (revM) = %d, # unique = %d\n', length(find(this_revM_sync > 0)), tmp);
-            fprintf('  # missing (revM_orig) = %d\n', nnz(~revM_orig));
-
-            tmp  = {}; tmp{1}  = num2cell(this_X_sync, 2);
-            tmp2 = {}; tmp2{1} = num2cell(this_X_orig, 2);
-            tmp3 = {}; tmp3{1} = num2cell(this_M_sync, 2);
-            plot_missing_ts(tmp, tmp2, tmp3, ['./tmp/' trace_name '.missing']);
-            tmp  = {}; tmp{1}  = num2cell(X_est, 2);
-            tmp2 = {}; tmp2{1} = num2cell(this_X_orig, 2);
-            tmp3 = {}; tmp3{1} = num2cell(this_M_sync, 2);
-            plot_missing_ts(tmp, tmp2, tmp3, ['./tmp/' trace_name '.est']);
-            tmp  = {}; tmp{1}  = num2cell(X_orig_est, 2);
-            tmp2 = {}; tmp2{1} = X;
-            tmp3 = {}; tmp3{1} = num2cell(revM_orig, 2);
-            plot_missing_ts(tmp, tmp2, tmp3, ['./tmp/' trace_name '.est_orig']);
-        end
     end %% END for estimate/evaluate each cluster
 
-    maes(1) = maes(1) / length(X_sync);
-    maes(2) = maes(2) / length(X_sync);
+
+    [maes(1), select_miss_elem] = evaluate_est_collection(est_collection, eval_opt);
+    revM_orig = ~ismember(revM, select_miss_elem);
+    maes(2) = calculate_mae(my_cell2mat(X), X_orig_est, revM_orig);
+
+    % maes(1) = maes(1) + calculate_mae(this_X_orig, X_est, this_M_sync);
+    % maes(2) = maes(2) + calculate_mae(my_cell2mat(X), X_orig_est, revM_orig);
+    % % maes(3) = calculate_mae(my_cell2mat(X), X_svd_base_est, revM_orig);
+    % % maes(4) = calculate_mae(my_cell2mat(X), X_svd_base_knn_est, revM_orig);
+    % % maes(5) = calculate_mae(my_cell2mat(X), X_srmf_est, revM_orig);
+    % % maes(6) = calculate_mae(my_cell2mat(X), X_srmf_knn_est, revM_orig);
+    % % maes(7) = calculate_mae(my_cell2mat(X), X_knn_est, revM_orig);
 
 
     % TRACE_NAME.TRACE_OPT.RANK_OPT.elemELEM_FRAC.lrLOSS_RATE.ELEM_MODE.LOSS_MODE.BURST_SIZE.INIT_ESTI_METHOD.FINAL_ESTI_METHOD.CLUST_METHOD.cNUM_CLUST.SYNC_METHOD.SYNC_OPT.EVAL_OPT.sSEED
     dlmwrite([output_dir trace_name '.' trace_opt '.' rank_opt '.elem' num2str(elem_frac) '.lr' num2str(loss_rate) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.' cluster_method '.' cluster_opt '.' sync_method '.' sync_opt '.' eval_opt '.s' num2str(seed) '.txt'], maes);
 end
-
-
-%% get_eval_opt: function description
-function [no_dup] = get_eval_opt(opt)
-    no_dup = 0;
-    if nargin < 1, return; end
-
-    opts = regexp(opt, ',', 'split');
-    for this_opt = opts
-        eval([char(this_opt) ';']);
-    end
-end
-
 
 
 %% calculate_mae: function description

@@ -22,8 +22,8 @@ function find_srmf_param(trace_name, trace_opt)
     rand('seed', 1);
     randn('seed', 1);
 
-    output_dir = '../../processed_data/task_dtw/do_missing_exp/';
-    % output_dir = '/u/yichao/warp/condor_data/task_dtw/condor/do_missing_exp/';
+    output_dir = '../../processed_data/task_miss/do_missing_exp/';
+    % output_dir = '/u/yichao/warp/condor_data/task_miss/condor/do_missing_exp/';
 
     %% SRMF
     epsilon = 0.01;

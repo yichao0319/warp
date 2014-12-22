@@ -8,7 +8,7 @@
 %%   > r_method
 %%     > 1: fill in shorter clusters with 0s
 %%     > 2: sum of the ranks of each cluster
-%% - sync_opt
+%% - warp_opt
 %%   > num_seg
 %%
 %% e.g.
@@ -16,7 +16,7 @@
 function [r] = do_exp(trace_name, trace_opt, ...
                 rank_opt, ...
                 cluster_method, cluster_opt, ...
-                sync_method, sync_opt)
+                warp_method, warp_opt)
     addpath('./c_func');
     addpath('/u/yichao/lens/utils/compressive_sensing');
 
@@ -37,8 +37,8 @@ function [r] = do_exp(trace_name, trace_opt, ...
     rand('seed', seed);
     randn('seed', seed);
 
-    output_dir = '../../processed_data/task_dtw/do_exp/';
-    % output_dir = '/u/yichao/warp/condor_data/task_dtw/condor/do_exp/';
+    output_dir = '../../processed_data/task_miss/do_exp/';
+    % output_dir = '/u/yichao/warp/condor_data/task_miss/condor/do_exp/';
 
     if DEBUG3, figbase = ['./tmp/' trace_name];
     else, figbase = ''; end
@@ -81,22 +81,22 @@ function [r] = do_exp(trace_name, trace_opt, ...
     
 
     %% --------------------
-    %% sync
+    %% warping
     %% --------------------
-    if DEBUG2, fprintf('sync\n'); end
+    if DEBUG2, fprintf('warping\n'); end
 
     other_mat = {};
     other_mat{1} = other_cluster{1};
     other_mat{2} = other_cluster{2};
     other_cluster = {};
 
-    [X_sync, other_cluster] = do_sync(X_cluster, sync_method, sync_opt, other_mat, figbase);
+    [X_warp, other_cluster] = do_warp(X_cluster, warp_method, warp_opt, other_mat, figbase);
 
-    % r = get_seg_rank(cluster2mat(X_sync), rank_num_seg, rank_percentile);
-    r = get_rank(X_sync, rank_opt);
-    if DEBUG3, plot_ts(X_sync, ['./tmp/' trace_name '.' sync_method]); end
+    % r = get_seg_rank(cluster2mat(X_warp), rank_num_seg, rank_percentile);
+    r = get_rank(X_warp, rank_opt);
+    if DEBUG3, plot_ts(X_warp, ['./tmp/' trace_name '.' warp_method]); end
 
 
-    dlmwrite([output_dir trace_name '.' trace_opt '.' cluster_method '.' cluster_opt '.' sync_method '.' rank_opt '.txt'], r);
+    dlmwrite([output_dir trace_name '.' trace_opt '.' cluster_method '.' cluster_opt '.' warp_method '.' rank_opt '.txt'], r);
     
 end

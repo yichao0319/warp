@@ -145,7 +145,7 @@ function [affinity_X, ws] = get_shift_cc_mat(X, form_type)
                 cnt = cnt + 1;
                 % cc = my_corrcoef(X{fi}', X{fj}');
                 % [shift_idx1, shift_idx2, total_cc] = find_best_shift_limit(X{fi}, X{fj}, lim_left, lim_right);
-                [shift_idx1, shift_idx2, total_cc] = find_best_shift_limit_c(X{fi}, X{fj}, lim_left, lim_right);
+                [shift_idx1, shift_idx2, total_cc] = find_best_shift_limit_c(X{fi}', X{fj}', lim_left, lim_right);
                 cc = max(total_cc);
                 if isnan(cc)
                     cc = -1;
@@ -163,7 +163,7 @@ function [affinity_X, ws] = get_shift_cc_mat(X, form_type)
                 if fi == fj
                     affinity_X(fi, fj) = 1;
                 else
-                    [shift_idx1, shift_idx2, total_cc] = find_best_shift_limit_c(X{fi}, X{fj}, lim_left, lim_right);
+                    [shift_idx1, shift_idx2, total_cc] = find_best_shift_limit_c(X{fi}', X{fj}', lim_left, lim_right);
                     cc = max(total_cc);
                     if isnan(cc)
                         cc = -1;

@@ -1,6 +1,6 @@
 %% postcondor_warp: function description
 function postcondor_warp()
-    input_dir = '~/warp/condor_data/task_dtw/condor/do_exp/';
+    input_dir = '~/warp/condor_data/task_miss/condor/do_exp/';
 
     warp_methods = {'dtw', 'shift', 'stretch'};
     warp_opt = 'num_seg=1';

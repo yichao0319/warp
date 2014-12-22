@@ -1,7 +1,7 @@
 %% postcondor_warp: function description
 function postcondor_missing()
-    input_dir = '~/warp/condor_data/task_dtw/condor/do_missing_exp/';
-    % input_dir = '~/warp/condor_data/task_dtw/condor/bak.do_missing_exp.1202.kmeans.top1_cluster/';
+    input_dir = '~/warp/condor_data/task_miss/condor/do_missing_exp/';
+    % input_dir = '~/warp/condor_data/task_miss/condor/bak.do_missing_exp.1202.kmeans.top1_cluster/';
     %% trace
     % , 'multi-ch-csi', 'blink'
     % trace_names = {'abilene', 'geant', 'wifi', '3g', '1ch-csi', 'cister', 'cu', 'ucsb', 'umich', 'p300', '4sq'};

@@ -6,7 +6,7 @@ num_jobs=70
 cnt=0
 
 ## clean log files
-rm /u/yichao/warp/condor_data/task_dtw/condor/log_missing/*
+rm /u/yichao/warp/condor_data/task_miss/condor/log_missing/*
 
 ## DAG 
 rm tmp.$func.dag*

@@ -15,7 +15,7 @@
 %%     > dtw_dist: DTW distance
 %%     > coef
 %%     > graph
-function [X_cluster, other_cluster] = do_cluster(X, method, cluster_opt, figbase, other_mat)
+function [X_cluster, other_cluster, cluster_affinity] = do_cluster(X, method, cluster_opt, figbase, other_mat)
     addpath('/u/yichao/warp/git_repository/utils/spectral_cluster');
 
     if nargin < 2, method = 'kmeans'; end
