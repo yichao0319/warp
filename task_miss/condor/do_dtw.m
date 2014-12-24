@@ -6,21 +6,18 @@ function [dtw_ts, dtw_other] = do_dtw(ts, opt, other_mat)
     if nargin < 2, opt = ''; end
     if nargin < 3, other_mat = {}; end
 
-    dtw_other = {};
 
+    dtw_other = {};
     num_seg = get_dtw_opt(opt);
 
     %% for each cluster
     for ci = 1:length(ts)
-        % dtw_ts{1} = ts{1};
+        %% nothing to be sync while there is only 1 row
         if length(ts{ci}) == 1
             dtw_ts{ci} = ts{ci};
 
-            % dtw_M{ci} = M{ci};
-            if nargin >= 3
-                for oi = 1:length(other_mat)
-                    dtw_other{oi}{ci} = other_mat{oi}{ci};
-                end
+            for oi = 1:length(other_mat)
+                dtw_other{oi}{ci} = other_mat{oi}{ci};
             end
             continue;
         end
@@ -65,7 +62,8 @@ function [dtw_ts, dtw_other] = do_dtw(ts, opt, other_mat)
     end
 end
 
-%% get_dtw_opt: function description
+
+%% get_dtw_opt
 function [num_seg] = get_dtw_opt(opt)
     num_seg = 1;
     if nargin < 1, return; end

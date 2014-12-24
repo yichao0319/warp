@@ -1,8 +1,14 @@
-function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat, figbase)
-    if nargin < 2, other_mat = {}; end
-    if nargin < 3, figbase = ''; end
+function [X_sync, other_sync] = do_shift_limit(X_cluster, opt, figbase, other_mat)
+    
+    DEBUG3 = 0;
 
-    other_warp = {};
+    if nargin < 2, opt = ''; end
+    if nargin < 3, figbase = ''; end
+    if nargin < 4, other_mat = {}; end
+    
+
+    [metric] = get_shift_limit_opt(opt);
+    other_sync = {};
 
     shift_lim_left = 1/3;
     shift_lim_right = 2/3;
@@ -10,30 +16,35 @@ function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat, figbase)
     % shift_lim_right = 4/5;
 
     for ci = 1:length(X_cluster)
+        %% nothing to be sync while there is only 1 row
         if length(X_cluster{ci}) == 1
-            % X_warp{ci} = X_cluster{ci};
             ts1 = X_cluster{ci}{1};
             ts1_left  = max(1, floor(length(ts1)*shift_lim_left));
             ts1_right = min(length(ts1), ceil(length(ts1)*shift_lim_right));
-            X_warp{ci}{1} = ts1(ts1_left:ts1_right);
+            X_sync{ci}{1} = ts1(ts1_left:ts1_right);
 
-            if nargin >= 2
-                for oi = 1:length(other_mat)
-                    % other_warp{oi}{ci} = other_mat{oi}{ci};
-                    other_warp{oi}{ci}{1} = other_mat{oi}{ci}{1}(ts1_left:ts1_right);
-                end
+            for oi = 1:length(other_mat)
+                % other_sync{oi}{ci} = other_mat{oi}{ci};
+                other_sync{oi}{ci}{1} = other_mat{oi}{ci}{1}(ts1_left:ts1_right);
             end
             continue;
         end
 
-        cc = [];
+        %% -------------
+        %% sync with the 1st flow (cluster head)
+        cc = {};
         for tsi = 2:length(X_cluster{ci})
             ts1_len = length(X_cluster{ci}{1});
             ts2_len = length(X_cluster{ci}{tsi});
             
-            % [shift_idx1, shift_idx2, this_cc] = find_best_shift_limit(X_cluster{ci}{1}, X_cluster{ci}{tsi}, shift_lim_left, shift_lim_right);
-            [shift_idx1, shift_idx2, this_cc] = find_best_shift_limit_c(X_cluster{ci}{1}, X_cluster{ci}{tsi}, shift_lim_left, shift_lim_right);
-            cc(tsi-1, :) = this_cc;
+            % [shift_idx1, shift_idx2, cc_ts] = find_best_shift_limit(X_cluster{ci}{1}, X_cluster{ci}{tsi}, shift_lim_left, shift_lim_right);
+            [shift_idx1, shift_idx2, cc_ts] = find_best_shift_limit_c(X_cluster{ci}{1}', X_cluster{ci}{tsi}', shift_lim_left, shift_lim_right, convert_metric4c(metric));
+            
+            if DEBUG3
+                fprintf('  cluster %d: ts1 len=%d, ts2 len=%d, cc_ts len=%d\n', ci, length(X_cluster{ci}{1}), length(X_cluster{ci}{tsi}), length(cc_ts));
+            end
+            
+            cc{tsi} = cc_ts;
             ws{tsi} = [];
             ws{tsi}(:, 1) = shift_idx1';
             ws{tsi}(:, 2) = shift_idx2';
@@ -48,51 +59,55 @@ function [X_warp, other_warp] = do_shift_limit(X_cluster, other_mat, figbase)
         end
 
 
-        % [X_warp{ci}, M_warp{ci}] = align_cluster(X_cluster{ci}, ws, M_cluster{ci});
+        %% -------------
+        %% align flows:
+        %%   So far all flows have been sync with the 1st flow.
+        %%   This step is to sync with each other 
         tmp_other_mat = {};
-        if nargin >= 2
-            for oi = 1:length(other_mat)
-                tmp_other_mat{oi} = other_mat{oi}{ci};
-            end
+        for oi = 1:length(other_mat)
+            tmp_other_mat{oi} = other_mat{oi}{ci};
         end
-        [X_warp{ci}, tmp_other_warp] = align_cluster(X_cluster{ci}, ws, tmp_other_mat);
-        if nargin >= 2
-            for oi = 1:length(tmp_other_warp)
-                other_warp{oi}{ci} = tmp_other_warp{oi};
-            end
+        [X_sync{ci}, tmp_other_sync] = align_cluster(X_cluster{ci}, ws, tmp_other_mat);
+        for oi = 1:length(tmp_other_sync)
+            other_sync{oi}{ci} = tmp_other_sync{oi};
         end
+
 
         %% ----------
         %% DEBUG
         %%   plot cc
-        if ~strcmp(figbase, '')
-            range_left  = min(ts1_len, ceil(ts1_len*shift_lim_right));
-            range_right = max(1, floor(ts1_len*shift_lim_left)) - 1 + ts2_len;
-            range = [range_left:range_right];
-            % plot_cc(cc, range, ts2_len, [figbase '.do_shift.cc']);
-            % plot_offset(cc, range, ts2_len, [figbase '.do_shift.offset']);
-            % plot_best_cc(cc, range, ts2_len, [figbase '.do_shift.best_cc']);
+        % if ~strcmp(figbase, '')
+        %     range_left  = min(ts1_len, ceil(ts1_len*shift_lim_right));
+        %     range_right = max(1, floor(ts1_len*shift_lim_left)) - 1 + ts2_len;
+        %     range = [range_left:range_right];
+        %     plot_cc(cc, range, ts2_len, [figbase '.do_shift.cc']);
+        %     plot_offset(cc, range, ts2_len, [figbase '.do_shift.offset']);
+        %     plot_best_cc(cc, range, ts2_len, [figbase '.do_shift.best_cc']);
 
-            %% shouldn't run this for interpolation
-            % plot_rank_compare(X_cluster{ci}, ws, X_warp{ci}, [figbase '.do_shift.rank']);
-        end
+        %     % shouldn't run this for interpolation
+        %     plot_rank_compare(X_cluster{ci}, ws, X_sync{ci}, [figbase '.do_shift.rank']);
+        % end
+        %% -------------
     end
 end
 
 
 
-%% shift_pad: function description
-%% idx: -2 -1  0  1  2  3  4  5  6  7  8
-%% ts1:        1  2  3  4  5  6
-%% ts2:  1  2  3  
-% function [idx1_padded, idx2_padded] = shift_pad(len1, len2, idx)
+function [metric] = get_shift_limit_opt(opt)
+    metric = 'dist';
     
+    opts = regexp(opt, ',', 'split');
+    for this_opt = opts
+        eval([char(this_opt) ';']);
+    end
+end
 
 
 %% ========================================
 %% plot figures:
 
-%% plot_cc: function description
+%% plot_cc: 
+%%   XXX: obsolete
 function plot_cc(cc, range, ts2_len, figname)
     font_size = 12;
     colors   = {'r', 'b', [0 0.8 0], 'm', [1 0.85 0], [0 0 0.47], [0.45 0.17 0.48], 'k'};
@@ -122,7 +137,8 @@ function plot_cc(cc, range, ts2_len, figname)
     print(fh, '-depsc', [figname '.eps']);
 end
 
-%% plot_offset: function description
+%% plot_offset
+%%   XXX: obsolete
 function plot_offset(cc, range, ts2_len, figname)
     font_size = 12;
     colors   = {'r', 'b', [0 0.8 0], 'm', [1 0.85 0], [0 0 0.47], [0.45 0.17 0.48], 'k'};
@@ -154,7 +170,8 @@ function plot_offset(cc, range, ts2_len, figname)
 end
 
 
-%% plot_best_cc: function description
+%% plot_best_cc
+%%   XXX: obsolete
 function plot_best_cc(cc, range, ts2_len, figname)
     font_size = 12;
     colors   = {'r', 'b', [0 0.8 0], 'm', [1 0.85 0], [0 0 0.47], [0.45 0.17 0.48], 'k'};
@@ -210,7 +227,7 @@ function plot_best_cc(cc, range, ts2_len, figname)
 end
 
 %% plot_rank_compare
-function plot_rank_compare(X_cluster, ws, X_warp, figname)
+function plot_rank_compare(X_cluster, ws, X_sync, figname)
     font_size = 12;
     colors   = {'r', 'b', [0 0.8 0], 'm', [1 0.85 0], [0 0 0.47], [0.45 0.17 0.48], 'k'};
     lines    = {'-', '--'};
@@ -228,9 +245,9 @@ function plot_rank_compare(X_cluster, ws, X_warp, figname)
     end
     %% ----------
 
-    tmp{1} = X_warp;
+    tmp{1} = X_sync;
     rank_opt = 'percentile=0.8,num_seg=1,r_method=1';
-    r_warp = get_rank(tmp, rank_opt);
+    r_sync = get_rank(tmp, rank_opt);
 
 
     %% every ts shift to the "tsi" row
@@ -261,7 +278,7 @@ function plot_rank_compare(X_cluster, ws, X_warp, figname)
     hold on;
 
     li = li + 1;
-    lh{li} = plot([r_warp r_warp], [0 1]);
+    lh{li} = plot([r_sync r_sync], [0 1]);
     set(lh{li}, 'Color', colors{mod(li-1,length(colors))+1});
     set(lh{li}, 'LineStyle', lines{mod(li-1,length(lines))+1});  %% line  : -|--|:|-.
     set(lh{li}, 'LineWidth', 4);
@@ -285,3 +302,5 @@ function plot_rank_compare(X_cluster, ws, X_warp, figname)
     % legend(legends, 'Location', 'NorthEast');
     print(fh, '-depsc', [figname '.eps']);
 end
+
+

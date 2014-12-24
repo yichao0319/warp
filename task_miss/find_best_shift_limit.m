@@ -1,7 +1,7 @@
 
 %% find_best_shift_limit
 function [shift_idx1, shift_idx2, cc] = find_best_shift_limit(ts1, ts2, lim_left, lim_right)
-    addpath('./c_func')
+    addpath('/u/yichao/warp/git_repository/task_miss/c_func')
     best_cc = -2;
 
     if length(ts2) < length(ts1) * (lim_right - lim_left)

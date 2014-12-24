@@ -1,0 +1,19 @@
+- do_missing_exp.m
+    Interpolate the missing values
+
+    step 1. read raw data in the format:
+            flow 1 time series x_{1,1}, x_{1,2}, ..., x_{1,t1}
+            flow 2 time series x_{2,1}, x_{2,2}, x_{2,3}, ..., x_{2,t2}
+            ...
+            flow m time series x_{m,1}, ..., x_{m,tm}
+    step 2. drop elements from the data matrix
+    step 3. first guess of missing values
+            (set init_esti_method='na' to skip this step)
+    step 4. cluster data matrix
+         4.1. calculate affinity matrix
+         4.2. call clustering algorithm (e.g. kmeans, spectral, ...)
+         4.3. merge clusters if necessary (e.g. #cluster member < thresh)
+    step 5. synchronize data matrix
+    step 6. interpolate missing values
+    step 7. evaluate the interpolation results
+

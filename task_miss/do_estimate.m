@@ -100,7 +100,8 @@ function [X_est,x,y,z] = wrap_lens(X, M, r0)
     
     soft = 1;
     sigma0 = [];
-    this_r = r0 * 4;
+    % this_r = r0;
+    this_r = r0*4;
     rho = 1.03;
 
     CC = zeros(1, n-1); CC(1,1) = 1;

@@ -1,7 +1,22 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Yi-Chao Chen @ UT Austin
+%%
 %% get_trace:
-%% - opt
-%%   > 4sq: num_loc, num_rep, loc_type
-%%   > p300: subject, session, img_idx, mat_type
+%%
+%% - Input:
+%%   - opt
+%%     > 4sq: num_loc, num_rep, loc_type
+%%     > p300: subject, session, img_idx, mat_type
+%%
+%% - Output:
+%%   - mat: 2D data
+%%       1st dim (cell): subjects / flows / ...
+%%       2nd dim (vector): time series
+%%   - r: rank
+%%   - bin: time bin size of one sample (s)
+%%   - alpha, lambda: parameters for SRMF
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
     test_time = 100;
 

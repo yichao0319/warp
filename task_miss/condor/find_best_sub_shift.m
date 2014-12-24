@@ -11,7 +11,7 @@
 
 
 function [ts1_idx, ts2_idx, best_coeff] = find_best_sub_shift(ts1, ts2)
-    addpath('./c_func');
+    addpath('/u/yichao/warp/git_repository/task_miss/c_func');
 
     if length(ts1) >= length(ts2)
         % [ts1_idx, ts2_idx, best_coeff] = find_best_sub_shift_order(ts1, ts2);

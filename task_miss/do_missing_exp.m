@@ -1,53 +1,60 @@
-%% do_missing_exp
-%% - trace_opt
-%%   > 4sq: num_loc, num_rep, loc_type
-%%   > p300: subject, session, img_idx, mat_type
-%% - rank_opt
-%%   > percentile
-%%   > num_seg
-%%   > r_method
-%%     > 1: fill in shorter clusters with 0s
-%%     > 2: sum of the ranks of each cluster
-%% - elem_frac: 1
-%% - loss_rate: 0.1
-%% - elem_mode: 'elem'
-%% - loss_mode: 'ind'
-%% - cluster_opt:
-%%   > num_cluster
-%%   > head_type
-%%     > random
-%%     > coef
-%%     > dist
-%%     > worst
-%%   > sync_type
-%%     > na
-%%     > shift
-%%     > stretch
-%%     > dtw
-%%   > metric_type
-%%     > dist: 2-norm
-%%     > coef
-%%     > dtw_dist: DTW distance
-%%     > graph
-%%   > sigma
-%% - sync_opt: 
-%%   > num_seg
-%% - eval_opt:
-%%   > no_dup
-%%     > 0: evaluate all
-%%     > 1: only evaluate non-duplicate part
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Yi-Chao Chen @ UT Austin
 %%
-%% e.g.
-%%   [maes] = do_missing_exp('test_sine_shift', 'na', 'percentile=0.8,num_seg=1,r_method=1', 1, 0.1, 'elem', 'ind', 1, 'na', 'lens', 'kmeans', 'num_cluster=1,head_type=''random'',sync_type=''na'',metric_type=''coef''', 'shift', 'num_seg=1', 'no_dup=0', 1);
-function [maes] = do_missing_exp(trace_name, trace_opt, ...
-                rank_opt, ...
-                elem_frac, loss_rate, elem_mode, loss_mode, burst_size, ...
+%% do_missing_exp
+%%
+%% - Input:
+%%   1. trace_opt
+%%      > 4sq: num_loc, num_rep, loc_type
+%%      > p300: subject, session, img_idx, mat_type
+%%      > others: na
+%%   2. drop_opt
+%%      > frac: element fraction
+%%      > lr: loss rate
+%%      > elem_mode: elem, ..
+%%      > loss_mode: ind, ..
+%%      > burst: burst size
+%%   3. sync_opt: 
+%%      > num_seg
+%%      > sync: na, shift, stretch, dtw
+%%      > metric: dist, coeff, graph
+%%      > sigma: used for fully connected graph metric
+%%   4. cluster_opt:
+%%      > method: 'kmeans', 'spectral'
+%%      > num: number of clusters
+%%      > head: the way to choose cluster head
+%%        - random
+%%        - best
+%%        - worst
+%%      > merge: merge cluster if necessary
+%%        - num: #members of a cluster < thresh
+%%        - sim: similarity of a cluster < thresh 
+%%        - top: top "thresh" clusters with highest similarity
+%%        - na: don't merge
+%%     > thresh
+%%   5. eval_opt:
+%%      > dup: 
+%%        how deal with duplicate missing elements
+%%        - no: only evaluate missing elements without duplicate
+%%        - avg: take average
+%%        - best: pick the value from cluster with highest similarity
+%%        - equal: treat all missing elements equally
+%%   6. init_esti_method:
+%%        the interpolation method before synchronzation
+%%   7. final_esti_method:
+%%        the final interpolation method
+%%   8. seed
+%%
+%%
+%% example:
+%%   do_missing_exp('test_sine_shift', 'na', 'frac=1,lr=0.1,elem_mode=''elem'',loss_mode=''ind'',burst=1', 'num_seg=1,sync=''shift'',metric=''coeff'',sigma=1', 'method=''kmeans'',num=1,head=''best'',merge=''na'',thresh=0', 'dup=''best''', 'na', 'lens', 1);
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [maes] = do_missing_exp(trace_name, trace_opt, drop_opt, ...
+                sync_opt, cluster_opt, eval_opt, ...
                 init_esti_method, final_esti_method, ...
-                cluster_method, cluster_opt, ...
-                sync_method, sync_opt, ...
-                eval_opt, ...
                 seed)
-    addpath('./c_func');
+    addpath('/u/yichao/warp/git_repository/task_miss/c_func');
     addpath('/u/yichao/lens/utils/compressive_sensing');
     
     %% --------------------
@@ -55,18 +62,22 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
     %% --------------------
     DEBUG0 = 0;
     DEBUG1 = 1;
-    DEBUG2 = 1;
-    DEBUG3 = 1;
+    DEBUG2 = 1;  %% progress
+    DEBUG3 = 1;  %% verbose
     DEBUG4 = 1;  %% results
+    DEBUG5 = 1;  %% plot / output for debugging
+    DEBUG6 = 1;  %% run locally (=1) or on condor (=0)
 
 
     %% --------------------
     %% Variables
     %% --------------------
-    output_dir = '../../processed_data/task_miss/do_missing_exp/';
-    % output_dir = '/u/yichao/warp/condor_data/task_miss/condor/do_missing_exp/';
+    %% run locally
+    if DEBUG6, output_dir = '../../processed_data/task_miss/do_missing_exp/';
+    %% run on condor
+    else, output_dir = '/u/yichao/warp/condor_data/task_miss/condor/do_missing_exp/'; end
 
-    if DEBUG3, figbase = ['./tmp/' trace_name];
+    if DEBUG5, figbase = ['./tmp/' trace_name];
     else, figbase = ['/u/yichao/warp/condor_data/task_miss/condor/do_missing_exp.fig/' trace_name]; end
 
 
@@ -81,9 +92,13 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
     if DEBUG2, fprintf('load data\n'); end
 
     [X, r, bin, alpha, lambda] = get_trace(trace_name, trace_opt);
-    fprintf('X size: %dx%d\n', size(my_cell2mat(X)));
-    tmp{1} = X;
-    if DEBUG3, plot_ts(tmp, ['./tmp/' trace_name '.orig']); end
+    if DEBUG3, 
+        fprintf('  X size: %dx%d\n', size(my_cell2mat(X)));
+    end
+    if DEBUG5, 
+        tmp{1} = X;
+        plot_ts(tmp, [figbase '.orig']); 
+    end
 
 
     %% --------------------
@@ -91,7 +106,7 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
     %% --------------------
     if DEBUG2, fprintf('drop values\n'); end
 
-    [X_drop, M] = do_drop(my_cell2mat(X), elem_frac, loss_rate, elem_mode, loss_mode, burst_size);
+    [X_drop, M] = do_drop(my_cell2mat(X), drop_opt);
 
     if DEBUG3
         fprintf('  size of X: %dx%d\n', size(X_drop));
@@ -99,18 +114,13 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
         fprintf('  # missing = %d (%f)\n', nnz(~M), nnz(~M) / prod(size(M)));
     end
 
-
     %% --------------------
-    %% - revM: label all missing elements with 1,2,3,...,#drop
-    %% - revX: label all elements with original index
+    %% revM: label all missing elements with 1,2,3,...,#drop
     %% --------------------
     drop_idx = find(M == 0);
     revM = zeros(size(M));
     revM(drop_idx) = 1:length(drop_idx);
 
-    tmp = size(X_drop);
-    revX = reshape(1:prod(size(X_drop)), tmp(2), tmp(1))';
-    
 
     %% --------------------
     %% initital estimation
@@ -122,8 +132,7 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
     X_est = num2cell(tmp, 2);
     M_est = num2cell(M, 2);
     revM_est = num2cell(revM, 2);
-    revX_est = num2cell(revX, 2);
-
+    
     
     %% --------------------
     %% clustering
@@ -134,14 +143,17 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
     other_mat{1} = M_est;
     other_mat{2} = X;
     other_mat{3} = revM_est;
-    other_mat{4} = revX_est;
     other_cluster = {};
 
-    [X_cluster, other_cluster, cluster_affinity] = do_cluster(X_est, cluster_method, cluster_opt, figbase, other_mat);
-    fprintf('  # cluster: %d\n', length(X_cluster));
-    fprintf('    affinity: ');
-    fprintf('%f,', cluster_affinity);
-    fprintf('\n');
+    this_cluster_opt = [cluster_opt ',' sync_opt];
+    [X_cluster, other_cluster, cluster_affinity] = do_cluster(X_est, this_cluster_opt, figbase, other_mat);
+
+    if DEBUG3
+        fprintf('  # cluster: %d\n', length(X_cluster));
+        for ci = 1:length(X_cluster)
+            fprintf('    cluster %d: #members=%d, affinity=%f\n', ci, length(X_cluster{ci}), cluster_affinity(ci));
+        end
+    end
 
 
     %% --------------------
@@ -153,15 +165,20 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
     other_mat{1} = other_cluster{1};
     other_mat{2} = other_cluster{2};
     other_mat{3} = other_cluster{3};
-    other_mat{4} = other_cluster{4};
     other_cluster = {};
 
-    [X_sync, other_cluster] = do_sync(X_cluster, sync_method, sync_opt, other_mat, figbase);
+    [X_sync, other_cluster] = do_sync(X_cluster, sync_opt, other_mat, figbase);
 
 
     %% --------------------
-    %% estimation of original matrix
+    %% interpolate missing values
     %% --------------------
+    if DEBUG2, fprintf('final interpolation\n'); end
+    
+    %% --------------------
+    %% estimation of original matrix (w/o sync)
+    if DEBUG2, fprintf('  - unsync matrix\n'); end
+    
     X_orig_est = do_estimate(my_cell2mat(X), M, final_esti_method, est_opt);
     % X_svd_base_est = do_estimate(my_cell2mat(X), M, 'svd_base', est_opt);
     % X_svd_base_knn_est = do_estimate(my_cell2mat(X), M, 'svd_base_knn', est_opt);
@@ -173,43 +190,37 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
     maes(2) = 0;
     est_collection = [];
 
+
+    %% --------------------
+    %% estimation of sync matrix:
+    %%   do that in each cluster
+    if DEBUG2, fprintf('  - sync matrix\n'); end
+
     for ci = 1:length(X_sync)
         this_X_sync = my_cell2mat(X_sync{ci});
         this_M_sync = my_cell2mat(other_cluster{1}{ci});
         this_X_orig = my_cell2mat(other_cluster{2}{ci});
         this_revM_sync = my_cell2mat(other_cluster{3}{ci});
-        this_revX_sync = my_cell2mat(other_cluster{4}{ci});
-
-        % X_sync = cluster2mat(X_sync);
-        % M_sync = cluster2mat(other_cluster{1});
-        % X_orig = cluster2mat(other_cluster{2});
-        % revM_sync = cluster2mat(other_cluster{3});
-        % revX_sync = cluster2mat(other_cluster{4});
 
         if DEBUG3
-            fprintf('  NaN in X = %d, # missing in M = %d\n', nnz(isnan(this_X_sync)), length(find(this_M_sync == 0)));
-            fprintf('    same location? %d\n', ~nnz((isnan(this_X_sync) - ~this_M_sync)) );
-            fprintf('  NaN in X = %d, # missing in revM = %d\n', nnz(isnan(this_X_sync)), length(find(this_revM_sync > 0)));
-            fprintf('    same location? %d\n', ~nnz((isnan(this_X_sync) - min(this_revM_sync,1)) ));
+            fprintf('    cluster %d:\n', ci);
+            fprintf('      NaN in X = %d, #missing in M = %d\n', nnz(isnan(this_X_sync)), length(find(this_M_sync == 0)));
+            fprintf('        same location? %d\n', ~nnz((isnan(this_X_sync) - ~this_M_sync)) );
+            fprintf('    NaN in X = %d, #missing in revM = %d\n', nnz(isnan(this_X_sync)), length(find(this_revM_sync > 0)));
+            fprintf('        same location? %d\n', ~nnz((isnan(this_X_sync) - min(this_revM_sync,1)) ));
         end
 
 
         %% --------------------
-        %% estimation
-        %% --------------------
-        if DEBUG2, fprintf('final estimation\n'); end
-
+        %% interpolate in this cluster
         X_est = do_estimate(this_X_sync, this_M_sync, final_esti_method, est_opt);
 
 
         %% --------------------
-        %% evaluate
-        %% --------------------
-        if DEBUG2, fprintf('evaluate\n'); end
-
+        %% collect the interpolated values
         est_collection = collect_estimation(this_X_orig, X_est, this_M_sync, this_revM_sync, ci, cluster_affinity(ci), est_collection);
 
-    end %% END for estimate/evaluate each cluster
+    end %% END of interpolation for cluster
 
 
     [maes(1), select_miss_elem] = evaluate_est_collection(est_collection, eval_opt);
@@ -224,9 +235,15 @@ function [maes] = do_missing_exp(trace_name, trace_opt, ...
     % % maes(6) = calculate_mae(my_cell2mat(X), X_srmf_knn_est, revM_orig);
     % % maes(7) = calculate_mae(my_cell2mat(X), X_knn_est, revM_orig);
 
+    if DEBUG4
+        fprintf('MAE: sync=%f, unsync=%f (improve by %f)\n', maes(1), maes(2), (maes(2)-maes(1))/maes(2));
+    end
 
-    % TRACE_NAME.TRACE_OPT.RANK_OPT.elemELEM_FRAC.lrLOSS_RATE.ELEM_MODE.LOSS_MODE.BURST_SIZE.INIT_ESTI_METHOD.FINAL_ESTI_METHOD.CLUST_METHOD.cNUM_CLUST.SYNC_METHOD.SYNC_OPT.EVAL_OPT.sSEED
-    dlmwrite([output_dir trace_name '.' trace_opt '.' rank_opt '.elem' num2str(elem_frac) '.lr' num2str(loss_rate) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.' cluster_method '.' cluster_opt '.' sync_method '.' sync_opt '.' eval_opt '.s' num2str(seed) '.txt'], maes);
+    % trace_name, trace_opt, drop_opt, ...
+    % sync_opt, cluster_opt, eval_opt, ...
+    % init_esti_method, final_esti_method, ...
+    % seed
+    dlmwrite([output_dir trace_name '.' trace_opt '.' drop_opt '.' sync_opt '.' cluster_opt '.' eval_opt '.' init_esti_method '.' final_esti_method '.' num2str(seed) '.txt'], maes);
 end
 
 

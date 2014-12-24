@@ -31,7 +31,7 @@ function [mae, select_miss_elem] = evaluate_est_collection(est_collection, opt)
     DEBUG0 = 0;
     DEBUG1 = 1;
     DEBUG2 = 1;
-    DEBUG3 = 0;
+    DEBUG3 = 1;
 
     
     %% --------------------

@@ -1,41 +1,96 @@
-%% do_cluster: function description
-%% - cluster_opt:
-%%   > num_cluster
-%%   > head_type
-%%     > random
-%%     > best
-%%     > worst
-%%   > sync_type
-%%     > na
-%%     > shift
-%%     > stretch
-%%     > dtw
-%%   > metric_type
-%%     > dist: euclidean distance
-%%     > dtw_dist: DTW distance
-%%     > coef
-%%     > graph
-function [X_cluster, other_cluster, cluster_affinity] = do_cluster(X, method, cluster_opt, figbase, other_mat)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Yi-Chao Chen @ UT Austin
+%%
+%% do_cluster
+%%
+%% - Input:
+%%   - X: 2D data
+%%       1st dim (cell): subjects / flows / ...
+%%       2nd dim (vector): time series
+%%   - cluster_opt:
+%%     > method: 
+%%       - kmeans
+%%       - spectral
+%%     > num: number of clusters
+%%     > head: the way to choose cluster head
+%%       - rand
+%%       - best
+%%       - worst
+%%     > merge: merge cluster if necessary
+%%       - num: #members of a cluster < thresh
+%%       - sim: similarity of a cluster < thresh 
+%%       - top: top "thresh" clusters with highest similarity
+%%       - na: don't merge
+%%     > thresh
+%%
+%%     > sync
+%%       - na
+%%       - shift
+%%       - stretch
+%%       - dtw
+%%     > metric
+%%       - dist
+%%       - coeff
+%%       - graph
+%%     > sigma: used for fully connected graph metric
+%%     > num_seg: segment time series and sync each segment
+%%
+%%   - figbase:
+%%       the path to output figures
+%%       figbase=='': don't plot
+%%   - other_mat: 3D data -- other matrices to be clustered as X
+%%       1st dim (cell): 
+%%       2nd dim (cell): subjects / flows / ...
+%%       3rd dim (vector): time series
+%%
+%% - Output:
+%%   - X_cluster: 3D data
+%%       1st dim (cell): clusters
+%%       2nd dim (cell): subjects / flows / ...
+%%       3rd dim (vector): time series
+%%   - other_cluster: 4D data
+%%       1st dim (cell): 
+%%       2nd dim (cell): clusters
+%%       3rd dim (cell): subjects / flows / ...
+%%       4th dim (vector): time series
+%%   - cluster_affinity: vector
+%%       c_i means the average affinity of cluster i
+%%      
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [X_cluster, other_cluster, cluster_affinity] = do_cluster(X, cluster_opt, figbase, other_mat)
     addpath('/u/yichao/warp/git_repository/utils/spectral_cluster');
 
-    if nargin < 2, method = 'kmeans'; end
-    if nargin < 3, cluster_opt = ''; end
-    if nargin < 4, figbase = ''; end
-    if nargin < 5, other_mat = {}; end
+    DEBUG3 = 0;
 
-    DEBUG2 = 0;
 
-    [num_cluster, head_type, sync_type, metric_type, sigma] = get_cluster_opt(cluster_opt);
+    if nargin < 2, cluster_opt = ''; end
+    if nargin < 3, figbase = ''; end
+    if nargin < 4, other_mat = {}; end
+
+    %% get options
+    [method, num_cluster, head_type, merge, thresh, num_seg, sync, metric, sigma] = get_cluster_opt(cluster_opt);
     other_cluster = {};
     cluster_head = [];
-    affinity_mat = [];
-    
+
+    %% affinity matrix
+    [affinity] = get_affinity(X, sync, metric, sigma);
+    %%   replace Inf by max/min value
+    inf_idx = isinf(affinity);
+    idx = find(inf_idx & affinity > 0);
+    max_val = max(affinity(~inf_idx));
+    affinity(idx) = max_val(1);
+    idx = find(inf_idx & affinity < 0);
+    min_val = min(affinity(~inf_idx));
+    affinity(idx) = min_val(1);
+
 
     if num_cluster == Inf
         %% ------------------
         %% no cluster
         cluster_idx = 1:length(X);
-        
+        cluster_head = 1:length(X);
+
     elseif num_cluster == 1
         %% ------------------
         %% 1 cluster
@@ -45,84 +100,51 @@ function [X_cluster, other_cluster, cluster_affinity] = do_cluster(X, method, cl
         %% ------------------
         %% k-means
         if strcmp(method, 'kmeans')
-            if strcmp(sync_type, 'na') & strcmp(metric_type, 'dist')
-                %% euclidean dist
-                cluster_idx = kmeans(my_cell2mat(X), num_cluster);
-            else
-                form_type = 'mat';
-                affinity_opt = '';
-                [affinity_mat, tmp_ws] = get_affinity_mat(X, sync_type, metric_type, form_type);
-                [cluster_idx, cluster_head, cluster_affinity] = my_kmeans(my_cell2mat(X), num_cluster, affinity_mat);
-            end
+            [cluster_idx, cluster_head, cluster_affinity] = my_kmeans(num_cluster, affinity);
 
         %% ------------------
         %% hierarchical clustering
+        %%   XXX: only implement euclidean dist 
         elseif strcmp(method, 'hierarchical')
-            if strcmp(sync_type, 'na') & strcmp(metric_type, 'dist')
-                %% euclidean dist
-                dist = pdist(my_cell2mat(X));
-                cluster_tree = linkage(dist);
-                cluster_idx = cluster(cluster_tree, 'maxclust', num_cluster);
-            else
-                [dist, tmp_ws] = get_affinity_mat(X, sync_type, metric_type);
-                cluster_tree = linkage(dist);
-                cluster_idx = cluster(cluster_tree, 'maxclust', num_cluster);
-            end
+            dist = pdist(my_cell2mat(X));
+            cluster_tree = linkage(dist);
+            cluster_idx = cluster(cluster_tree, 'maxclust', num_cluster);
 
         %% ------------------
         %% spectral clustering
         elseif strcmp(method, 'spectral')
-            X_tmp = my_cell2mat(X);
-            X_tmp(isnan(X_tmp)) = 0;
-            X_tmp = num2cell(X_tmp, 2);
-            affinity_opt = ['sigma=' num2str(sigma)];
-            form_type = 'mat';
-            [affinity_mat, tmp_ws] = get_affinity_mat(X_tmp, sync_type, metric_type, form_type, affinity_opt);
-            % affinity_mat(1:10, 1:10)
-            % function [idx] = spectral_cluster(A,k,lap_opt,kmax)
-            cluster_idx = spectral_cluster(affinity_mat, num_cluster);
+            cluster_idx = spectral_cluster(affinity, num_cluster);
 
         %% ------------------
         %% subspace clustering
         elseif strcmp(method, 'subspace')
-            [cluster_idx, cluster_head, cluster_affinity] = subspace_cluster(X, num_cluster, sync_type, head_type);
+            [cluster_idx, cluster_head, cluster_affinity] = subspace_cluster(X, num_cluster, sync, head_type);
 
         else
             error(['wrong method name: ' method])
         end
     end
 
-    %% --------------------------
-    %% only use cluster idx > 0
-    uniq_cluster_idx = unique(cluster_idx(find(cluster_idx>0)));
-    num_cluster = length(uniq_cluster_idx);
-    num_rows    = length(X);
-
 
     %% --------------------------
     %% find cluster head
-    if length(cluster_head) == 0
-        %% prepare for the affinity matrix
-        if ~strcmp(head_type, 'random') & length(affinity_mat) == 0
-            X_tmp = my_cell2mat(X);
-            X_tmp(isnan(X_tmp)) = 0;
-            X_tmp = num2cell(X_tmp, 2);
-            [affinity_mat, tmp_ws] = get_affinity_mat(X_tmp, 'shift', 'coef', 'mat');
-        end
+    if length(cluster_head) == 0 | ~strcmp(head_type, 'best')
+        
+        for ci = 1:max(cluster_idx)
+            idx = find(cluster_idx == ci);
+            % tmp_X = {};
+            % for ii = 1:length(idx)
+            %     tmp_X{ii} = X{idx(ii)};
+            % end
+            % tmp_X = my_cell2mat(tmp_X);
+            % if length(affinity) > 0
+            %     tmp_affinity = affinity(idx, idx);
+            % else
+            %     tmp_affinity = [];
+            % end
+            tmp_affinity = affinity(idx, idx);
 
-        for ci = 1:num_cluster
-            idx = find(cluster_idx == uniq_cluster_idx(ci));
-            tmp_X = {};
-            for ii = 1:length(idx)
-                tmp_X{ii} = X{idx(ii)};
-            end
-            tmp_X = my_cell2mat(tmp_X);
-            if length(affinity_mat) > 0
-                tmp_affinity_mat = affinity_mat(idx, idx);
-            else
-                tmp_affinity_mat = [];
-            end
-            [tmp_idx, tmp_aff] = select_head(tmp_X, head_type, tmp_affinity_mat);
+            [tmp_idx, tmp_aff] = select_head(head_type, tmp_affinity);
             cluster_head(ci) = idx(tmp_idx);
             cluster_affinity(ci) = tmp_aff;
         end
@@ -130,55 +152,35 @@ function [X_cluster, other_cluster, cluster_affinity] = do_cluster(X, method, cl
 
 
     %% --------------------------
-    %% DEBUG
-    %% only choose the cluster w/ highest affinity
-    % [val, best_clust_idx] = max(cluster_affinity);
-    % new_cluster_idx = zeros(size(cluster_idx));
-    % idx = find(cluster_idx == best_clust_idx);
-    % new_cluster_idx(idx) = 1;
-
-    % tmp = cluster_head(best_clust_idx);
-    % cluster_head = [];
-    % cluster_head(1) = tmp;
-
-    % tmp = cluster_affinity(best_clust_idx);
-    % cluster_affinity = [];
-    % cluster_affinity(1) = tmp;
-
-    % cluster_idx = new_cluster_idx;
-    % uniq_cluster_idx = unique(cluster_idx(find(cluster_idx>0)));
-    % num_cluster = length(uniq_cluster_idx);
-    %% END DEBUG
+    %% merge cluster if necessary
+    merge_opt = ['merge=''' merge ''',thresh=' num2str(thresh) ',head=''' head_type ''''];
+    [cluster_members, cluster_head, cluster_affinity] = merge_cluster(cluster_idx, cluster_head, cluster_affinity, affinity, merge_opt);
+    
     %% --------------------------
-
-
-    %% --------------------------
-    %% cluster rows according to cluster_idx
-    for ci = 1:num_cluster
-        idx = find(cluster_idx == uniq_cluster_idx(ci));
+    %% cluster rows according to cluster_idx,
+    %% and put the cluster head in the first place
+    % for ci = 1:max(cluster_idx)
+    %     idx = find(cluster_idx == ci);
+    for ci = 1:length(cluster_members)
+        idx = cluster_members{ci};
         cluster_sizes(ci) = length(idx);
 
         %% cluster head
         X_cluster{ci}{1} = X{cluster_head(ci)};
-        if nargin >= 5
-            for oi = 1:length(other_mat)
-                other_cluster{oi}{ci}{1} = other_mat{oi}{cluster_head(ci)};
-            end
+        for oi = 1:length(other_mat)
+            other_cluster{oi}{ci}{1} = other_mat{oi}{cluster_head(ci)};
         end
-        idx = idx(idx ~= cluster_head(ci));
-        if DEBUG2, fprintf('  cluster %d head = %d\n', ci, cluster_head(ci)); end
+        % idx = idx(idx ~= cluster_head(ci));
+        idx = setxor(idx, cluster_head(ci));
+        if DEBUG3, fprintf('  cluster %d head = %d\n', ci, cluster_head(ci)); end
 
         %% other member
         for iidx = 1:length(idx)
 
             X_cluster{ci}{iidx+1} = X{idx(iidx)};
             
-            % M_cluster{ci}{iidx} = M{idx(iidx)};
-            if nargin >= 5
-                % other_cluster = {};
-                for oi = 1:length(other_mat)
-                    other_cluster{oi}{ci}{iidx+1} = other_mat{oi}{idx(iidx)};
-                end
+            for oi = 1:length(other_mat)
+                other_cluster{oi}{ci}{iidx+1} = other_mat{oi}{idx(iidx)};
             end
         end
         % size(X_cluster{ci})
@@ -188,50 +190,29 @@ function [X_cluster, other_cluster, cluster_affinity] = do_cluster(X, method, cl
     %% --------------
     %% DEBUG
     if ~strcmp(figbase, '')
-        plot_cluster_size(cluster_sizes, num_rows, [figbase '.' cluster_opt '.clust_size']);
+        plot_cluster_size(cluster_sizes, length(X), [figbase '.' cluster_opt '.clust_size']);
     end
 end
 
 
 %% get_dtw_opt: function description
-function [num_cluster, head_type, sync_type, metric_type, sigma] = get_cluster_opt(opt)
-    num_cluster = 1;
-    head_type = 'random';
-    sync_type = 'na';
-    metric_type = 'coef';
-    sigma = 1;
-    if nargin < 1, return; end
+function [method, num, head, merge, thresh, num_seg, sync, metric, sigma] = get_cluster_opt(opt)
 
+    method  = 'kmeans';
+    num     = 1;
+    head    = 'rand';
+    merge   = 'na';
+    thresh  = 0;
+    num_seg = 1;
+    sync    = 'na';
+    metric  = 'coeff';
+    sigma   = 1;
+    
     opts = regexp(opt, ',', 'split');
     for this_opt = opts
         eval([char(this_opt) ';']);
     end
 end
-
-
-%% select_head:
-function [head_idx, cluster_affinity] = select_head(X, head_type, affinity_mat)
-    row_affinity = mean(affinity_mat, 2);
-
-    if strcmp(head_type, 'random')
-        %% rand head
-        head_idx = randi(size(X,1));
-        % cluster_affinity = row_affinity(head_idx);
-        cluster_affinity = 0;
-
-    elseif strcmp(head_type, 'best')
-        [cluster_affinity, head_idx] = max(row_affinity);
-
-    elseif strcmp(head_type, 'worst')
-        [cluster_affinity, head_idx] = min(row_affinity);
-
-    else
-        error(['wrong head type = ' head_type]);
-
-    end
-        
-end
-
 
 
 %% plot_cluster_size: function description
