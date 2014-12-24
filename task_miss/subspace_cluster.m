@@ -27,7 +27,7 @@ function [cluster_idx, cluster_head, cluster_affinity] = subspace_cluster(X, num
             if tsi == seed_idx, continue; end
 
             if strcmp(method, 'shift')
-                [shift_idx1, shift_idx2, this_cc] = find_best_shift_limit_c(X{seed_idx}', X{tsi}', shift_lim_left, shift_lim_right);
+                [shift_idx1, shift_idx2, this_cc] = find_best_shift_limit_c(X{seed_idx}', X{tsi}', shift_lim_left, shift_lim_right, convert_metric4c('coeff'));
             elseif strcmp(method, 'stretch')
                 [shift_idx1, shift_idx2, this_cc] = find_best_stretch(X{seed_idx}, X{tsi});
             else
