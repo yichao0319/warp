@@ -11,8 +11,8 @@
 
 function [accuracy, classification] = match_single(trace_name, trace_opt, divide_opt, seed)
     addpath('/v/filer4b/v27q002/ut-wireless/yichao/warp/git_repository/task_match/mfcc');
-    addpath('/v/filer4b/v27q002/ut-wireless/yichao/warp/git_repository/task_dtw/c_func');
-    addpath('/v/filer4b/v27q002/ut-wireless/yichao/warp/git_repository/task_dtw');
+    addpath('/v/filer4b/v27q002/ut-wireless/yichao/warp/git_repository/task_miss/c_func');
+    addpath('/v/filer4b/v27q002/ut-wireless/yichao/warp/git_repository/task_miss');
 
     DEBUG0 = 0;
     DEBUG1 = 1;

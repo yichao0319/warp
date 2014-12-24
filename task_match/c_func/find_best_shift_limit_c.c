@@ -206,11 +206,11 @@ Output1 find_best_shift_limit_c(double *s, double *t, int ns, int nt, int k, dou
     mexPrintf("left=%d, right=%d, len=%d\n", lim_idx_left, lim_idx_right, new_len);*/
 
     ret.len = new_len;
-    ret.cc_len = lim_idx_right + nt;
+    ret.cc_len = lim_idx_right - lim_idx_left + 1;
     ret.shift_idx1 = (int *)malloc(new_len * sizeof(int));
     ret.shift_idx2 = (int *)malloc(new_len * sizeof(int));
     ret.cc = (double *)malloc((lim_idx_right+nt) * sizeof(double));
-    for(i = 0; i < (lim_idx_right+nt); ++i) {
+    for(i = 0; i < ret.cc_len; ++i) {
         ret.cc[i] = -1;
     }
 
@@ -258,9 +258,9 @@ Output1 find_best_shift_limit_c(double *s, double *t, int ns, int nt, int k, dou
 
         if(metric == 1) {
             coeff = corrcoef_c(ts1_padded, ts2_padded, new_len, k);
-            ret.cc[idx+nt-1] = coeff;
-            if(ret.cc[idx+nt-1] > best_cc) {
-                best_cc = ret.cc[idx+nt-1];
+            ret.cc[idx-lim_idx_left] = coeff;
+            if(ret.cc[idx-lim_idx_left] > best_cc) {
+                best_cc = ret.cc[idx-lim_idx_left];
                 memcpy(ret.shift_idx1, idx1_padded, new_len*sizeof(int));
                 memcpy(ret.shift_idx2, idx2_padded, new_len*sizeof(int));
             }
@@ -271,9 +271,9 @@ Output1 find_best_shift_limit_c(double *s, double *t, int ns, int nt, int k, dou
         }
         else {
             coeff = get_distance(ts1_padded, ts2_padded, new_len, k);
-            ret.cc[idx+nt-1] = coeff;
-            if((ret.cc[idx+nt-1] < best_cc) || best_cc < 0) {
-                best_cc = ret.cc[idx+nt-1];
+            ret.cc[idx-lim_idx_left] = coeff;
+            if((ret.cc[idx-lim_idx_left] < best_cc) || best_cc < 0) {
+                best_cc = ret.cc[idx-lim_idx_left];
                 memcpy(ret.shift_idx1, idx1_padded, new_len*sizeof(int));
                 memcpy(ret.shift_idx2, idx2_padded, new_len*sizeof(int));
             }

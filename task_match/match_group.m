@@ -62,7 +62,7 @@
 function [accuracy, classification] = match_group(trace_name, trace_opt, feature_opt, divide_opt, cluster_opt, sync_opt, seed)
     addpath('/v/filer4b/v27q002/ut-wireless/yichao/warp/git_repository/task_match/mfcc');
     addpath('/v/filer4b/v27q002/ut-wireless/yichao/warp/git_repository/task_match/c_func');
-    % addpath('/v/filer4b/v27q002/ut-wireless/yichao/warp/git_repository/task_dtw');
+    % addpath('/v/filer4b/v27q002/ut-wireless/yichao/warp/git_repository/task_miss');
     
     %% --------------------
     %% DEBUG

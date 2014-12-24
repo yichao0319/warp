@@ -47,10 +47,10 @@ function test_extract_features()
 
 
     cnt = cnt + 1;
-    test{cnt} = 'shift, coeff, num=2';
+    test{cnt} = 'shift, coeff, num=0.5';
     sync{cnt} = 'shift';
     metric{cnt} = 'coeff'; %% coeff
-    num(cnt) = 2;
+    num(cnt) = 0.5;
     X{cnt}{1}(1, :) = [1:20];
     X{cnt}{1}(2, :) = [11:30];
     X{cnt}{1}(3, :) = randi(100, 1, 20);
