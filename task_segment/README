@@ -1,0 +1,15 @@
+- seg_ts.m
+    Partition sensor data by finding sliding windows with local minimum rank.
+    The idea is if subjects are doing the same activity, the synchronized sensor data should be similar and therefore be low rank. While during the time between activities, subjects may move arbitrarily so the windows containing these periods have higher rank.
+
+    Step 1. Read sensor data and organize as a 2D matrix:
+                subject 1 feature 1 sensor data time series: t_{1,1,t1}
+                ...
+                subject 1 feature n, sensor data time series: t_{1,n,t1}
+                ...
+                subject m feature 1, sensor data time series: t_{m,1,tm}
+                ...
+                subject m feature n, sensor data time series: t_{m,n,tm}
+    Step 2. Synchronize rows using DTW
+    Step 3. Calculate the ranks of sliding windows with different sizes
+    Step 4. Finding the local minimum ranks as the change points
