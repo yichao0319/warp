@@ -1,4 +1,4 @@
-%% do_missing_exp
+%% check_mat_size_mae
 %% - trace_opt
 %%   > 4sq: num_loc, num_rep, loc_type
 %%   > p300: subject, session, img_idx, mat_type

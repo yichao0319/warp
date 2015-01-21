@@ -31,7 +31,7 @@ function [mae, select_miss_elem] = evaluate_est_collection(est_collection, opt)
     DEBUG0 = 0;
     DEBUG1 = 1;
     DEBUG2 = 1;
-    DEBUG3 = 0;
+    DEBUG3 = 1;
 
     
     %% --------------------
@@ -55,8 +55,16 @@ function [mae, select_miss_elem] = evaluate_est_collection(est_collection, opt)
         select_idx = find(ismember(est_collection(5,:), select_miss_elem) == 1);
 
         if DEBUG3
-            est_collection(1, select_idx)
-            est_collection(2, select_idx)
+            fprintf('    orig (len=%d): ', length(est_collection(1, select_idx)));
+            for si = 1:min(length(est_collection(1, select_idx)), 10)
+                fprintf('%.2f,', est_collection(1, select_idx(si)));
+            end
+            fprintf('\n');
+            fprintf('    esti (len=%d): ', length(est_collection(2, select_idx)));
+            for si = 1:min(length(est_collection(2, select_idx)), 10)
+                fprintf('%.2f,', est_collection(2, select_idx(si)));
+            end
+            fprintf('\n');
         end
 
         if length(select_idx) > 0
@@ -87,8 +95,16 @@ function [mae, select_miss_elem] = evaluate_est_collection(est_collection, opt)
         end
 
         if DEBUG3
-            avg_orig
-            avg_est
+            fprintf('    orig (len=%d): ', length(avg_orig));
+            for si = 1:min(length(avg_orig), 10)
+                fprintf('%.2f,', avg_orig(1,si));
+            end
+            fprintf('\n');
+            fprintf('    esti (len=%d): ', length(avg_est));
+            for si = 1:min(length(avg_est), 10)
+                fprintf('%.2f,', avg_est(1,si));
+            end
+            fprintf('\n');
         end
 
         meanX = mean(abs(avg_orig(:)));
@@ -118,8 +134,16 @@ function [mae, select_miss_elem] = evaluate_est_collection(est_collection, opt)
         end
         
         if DEBUG3
-            avg_orig
-            avg_est
+            fprintf('    orig (len=%d): ', length(avg_orig));
+            for si = 1:min(length(avg_orig), 10)
+                fprintf('%.2f,', avg_orig(1,si));
+            end
+            fprintf('\n');
+            fprintf('    esti (len=%d): ', length(avg_est));
+            for si = 1:min(length(avg_est), 10)
+                fprintf('%.2f,', avg_est(1,si));
+            end
+            fprintf('\n');
         end
 
         meanX = mean(abs(avg_orig(:)));
@@ -131,8 +155,16 @@ function [mae, select_miss_elem] = evaluate_est_collection(est_collection, opt)
         select_miss_elem = unique(est_collection(5,:));
 
         if DEBUG3
-            est_collection(1,:)
-            est_collection(2,:)
+            fprintf('    orig (len=%d): ', length(est_collection(1,:)));
+            for si = 1:min(length(est_collection(1,:)), 10)
+                fprintf('%.2f,', est_collection(1,si));
+            end
+            fprintf('\n');
+            fprintf('    esti (len=%d): ', length(est_collection(2,:)));
+            for si = 1:min(length(est_collection(2,:)), 10)
+                fprintf('%.2f,', est_collection(2,si));
+            end
+            fprintf('\n');
         end
 
         meanX = mean(abs(est_collection(1,:)));

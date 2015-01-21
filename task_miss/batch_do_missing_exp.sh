@@ -1,31 +1,30 @@
-## do_missing_exp
-## - trace_opt
-##   > 4sq: num_loc, num_rep, loc_type
-##   > p300: subject, session, img_idx, mat_type
-## - rank_opt
-##   > percentile
-##   > num_seg
-##   > r_method
-##     > 1: fill in shorter clusters with 0s
-##     > 2: sum of the ranks of each cluster
-## - elem_frac: 1
-## - loss_rate: 0.1
-## - elem_mode: 'elem'
-## - loss_mode: 'ind'
-## - sync_opt: 
-## - sync_opt
-##   > num_seg
-##
+#!/bin/bash
 
-trace_names=("abilene" "geant" "wifi" "3g" "1ch-csi" "cister" "cu" "multi-ch-csi" "ucsb" "umich" "p300" "4sq" "blink")
+# trace_names=("abilene" "geant" "wifi" "3g" "1ch-csi" "cister" "cu" "multi-ch-csi" "ucsb" "umich" "p300" "4sq" "blink")
 # "test_sine_shift" "test_sine_scale" 
+trace_names=("4sq")
 
 
-# cluster_method="kmeans"
-# num_cluster=1
-cluster_method="spectral_cc"
-num_cluster=0
-sync_method="shift_limit"
+cluster_method="kmeans"
+num_cluster=2
+# cluster_method="subspace"
+# num_cluster=5000
+
+merge="top"
+thresh=1
+# merge="num"
+# thresh=50
+# merge="na"
+# thresh=0
+
+dup="best"
+# dup="avg"
+# dup="equal"
+# dup="no"
+
+sync="shift"
+metric="coeff"
+
 
 for trace_name in ${trace_names[@]}; do
 
@@ -39,5 +38,5 @@ for trace_name in ${trace_names[@]}; do
         trace_opt="na"
     fi
     
-    matlab -r "[mae, mae_orig] = do_missing_exp('${trace_name}', '${trace_opt}', 'percentile=0.8,num_seg=1,r_method=1', 1, 0.1, 'elem', 'ind', 1, 'na', 'knn', ${num_cluster}, '${cluster_method}', '${sync_method}', 'num_seg=1', 1); exit;"
+    matlab -r "[mae] = do_missing_exp('${trace_name}', '${trace_opt}', 'frac=1,lr=0.1,elem_mode=''elem'',loss_mode=''ind'',burst=1', 'num_seg=1,sync=''${sync}'',metric=''${metric}'',sigma=1', 'method=''${cluster_method}'',num=${num_cluster},head=''best'',merge=''${merge}'',thresh=${thresh}', 'dup=''${dup}''', 'na', 'lens', 1); exit;"
 done

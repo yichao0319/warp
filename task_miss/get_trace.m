@@ -7,6 +7,8 @@
 %%   - opt
 %%     > 4sq: num_loc, num_rep, loc_type
 %%     > p300: subject, session, img_idx, mat_type
+%%     > deap: video
+%%     > muse: muse
 %%
 %% - Output:
 %%   - mat: 2D data
@@ -18,6 +20,8 @@
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
+    if nargin < 2, opt = 'na'; end
+
     test_time = 100;
 
     if strcmp(trace_name, 'abilene')
@@ -26,10 +30,12 @@ function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
         X = X';
 
         % r = 32;
-        r = 32;
+        r = 4;
         bin = 10*60;
         alpha = 10;
         lambda = 1;
+        % alpha = 10;
+        % lambda = 100;
 
     elseif strcmp(trace_name, 'geant')
         input_dir  = '/u/yzhang/MRA/data/';
@@ -109,7 +115,8 @@ function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
         X = X(:, 1:num_frames);
 
         % r = 8;
-        r = 64;
+        % r = 64;
+        r = 128;
         bin = 1;
         alpha = 100;
         lambda = 0;
@@ -141,7 +148,8 @@ function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
         X = X(:, 1:num_frames);
 
         % r = 16;
-        r = 90;
+        % r = 90;
+        r = 8;
         bin = 1;
         alpha = 0.1;
         lambda = 0.1;
@@ -149,7 +157,7 @@ function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
     elseif strcmp(trace_name, 'multi-ch-csi')
         filename = 'static_trace13.ant1.mag.txt';
         input_dir='/u/yichao/lens/condor_data/subtask_parse_csi_channel/csi/';
-        num_frames=500;
+        num_frames=1000;
         width=270;
         height=1;
 
@@ -157,7 +165,8 @@ function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
         X = X(:, 1:num_frames);
 
         % r = 16;
-        r = 270;
+        % r = 270;
+        r = 8;
         bin = 1;
         alpha = 1;
         lambda = 0.0001;
@@ -241,6 +250,16 @@ function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
         alpha = 10;
         lambda = 10;
 
+    elseif strcmp(trace_name, 'deap')
+        [X, r, bin] = get_trace_deap(opt);
+        alpha = 10;
+        lambda = 10;
+
+    elseif strcmp(trace_name, 'muse')
+        [X, r, bin] = get_trace_muse(opt);
+        alpha = 10;
+        lambda = 10;
+
     elseif strcmp(trace_name, 'test')
         nr = 20;
         test_time = 1000;
@@ -314,6 +333,8 @@ function [mat, r, bin, alpha, lambda] = get_trace(trace_name, opt)
         bin = 1;
         alpha = 1000;
         lambda = 0.00001;
+    else
+        error(['wrong trace name: ' trace_name]);
     
     end
 

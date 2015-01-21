@@ -57,6 +57,7 @@ while($remain_jobs > 0) {
 
             $cmd = "bash $VALIDATE | grep $this_priority | head -1";
             my $condor_cmd = `$cmd`;
+            $condor_cmd =~ s/'/\\'/g;
 
             print "  > $condor_cmd";
             `$condor_cmd 2> /dev/null`;

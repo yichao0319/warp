@@ -17,3 +17,17 @@
     step 6. interpolate missing values
     step 7. evaluate the interpolation results
 
+- do_exp.m
+    Calculate the rank of 
+    a) original entire matrix, 
+    b) original sub matrix (with the same length as the sync one),
+    c) desync entire matrix,
+    d) desync sub matrix, and
+    e) sync matrix
+
+- check_rhythm.m
+    Plot the time series of data to see if there is diurnal pattern
+
+- check_mat_size_mae.m
+    Compare the NMAE of having entire matrix with that of having only partial matrix.
+

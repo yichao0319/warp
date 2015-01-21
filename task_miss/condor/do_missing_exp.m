@@ -7,6 +7,7 @@
 %%   1. trace_opt
 %%      > 4sq: num_loc, num_rep, loc_type
 %%      > p300: subject, session, img_idx, mat_type
+%%      > deap: video
 %%      > others: na
 %%   2. drop_opt
 %%      > frac: element fraction
@@ -102,6 +103,21 @@ function [maes] = do_missing_exp(trace_name, trace_opt, drop_opt, ...
 
 
     %% --------------------
+    %% desync data
+    %% --------------------
+    if DEBUG2, fprintf('desync data\n'); end
+    
+    other_mat = {};
+    desync_opt = 'desync=0.15';
+    [X_desync, other_desync] = desync_data(X, other_mat, desync_opt);
+    X = X_desync;
+
+    if DEBUG3, 
+        fprintf('  X size: %dx%d\n', size(my_cell2mat(X)));
+    end
+    
+
+    %% --------------------
     %% drop values
     %% --------------------
     if DEBUG2, fprintf('drop values\n'); end
@@ -116,7 +132,6 @@ function [maes] = do_missing_exp(trace_name, trace_opt, drop_opt, ...
 
     %% --------------------
     %% revM: label all missing elements with 1,2,3,...,#drop
-    %% --------------------
     drop_idx = find(M == 0);
     revM = zeros(size(M));
     revM(drop_idx) = 1:length(drop_idx);
@@ -206,7 +221,7 @@ function [maes] = do_missing_exp(trace_name, trace_opt, drop_opt, ...
             fprintf('    cluster %d:\n', ci);
             fprintf('      NaN in X = %d, #missing in M = %d\n', nnz(isnan(this_X_sync)), length(find(this_M_sync == 0)));
             fprintf('        same location? %d\n', ~nnz((isnan(this_X_sync) - ~this_M_sync)) );
-            fprintf('    NaN in X = %d, #missing in revM = %d\n', nnz(isnan(this_X_sync)), length(find(this_revM_sync > 0)));
+            fprintf('      NaN in X = %d, #missing in revM = %d\n', nnz(isnan(this_X_sync)), length(find(this_revM_sync > 0)));
             fprintf('        same location? %d\n', ~nnz((isnan(this_X_sync) - min(this_revM_sync,1)) ));
         end
 
@@ -222,6 +237,10 @@ function [maes] = do_missing_exp(trace_name, trace_opt, drop_opt, ...
 
     end %% END of interpolation for cluster
 
+
+    %% --------------------
+    %% get NMAE
+    if DEBUG2, fprintf('calculate NMAE\n'); end
 
     [maes(1), select_miss_elem] = evaluate_est_collection(est_collection, eval_opt);
     revM_orig = ~ismember(revM, select_miss_elem);

@@ -4,8 +4,10 @@ function postcondor_missing()
     % input_dir = '~/warp/condor_data/task_miss/condor/bak.do_missing_exp.1202.kmeans.top1_cluster/';
     %% trace
     % , 'multi-ch-csi', 'blink'
-    % trace_names = {'abilene', 'geant', 'wifi', '3g', '1ch-csi', 'cister', 'cu', 'ucsb', 'umich', 'p300', '4sq'};
-    trace_names = {'geant', '3g', '4sq'};
+    % trace_names = {'abilene' 'geant' 'wifi' '3g' '1ch-csi' 'cister' 'cu' 'ucsb' 'umich' 'p300' '4sq' 'deap' 'muse' 'multi-ch-csi'};
+    % trace_names = {'muse' 'p300' 'deap' 'wifi' '1ch-csi' 'abilene' 'umich' 'cister' 'multi-ch-csi'};
+    % trace_names = {'geant', '3g', '4sq'};
+    trace_names = {'multi-ch-csi'};
 
 
     %% dropping elements
@@ -16,35 +18,26 @@ function postcondor_missing()
     burst_size = 1;
 
 
+    %% sync
+    % sync_methods = {'na' 'dtw' 'shift' 'stretch'};
+    sync_methods = {'shift'};
+    % metrics = {'stretch'};
+    metrics = {'coeff'};
+    num_seg = 1;
+
+
     %% cluster
     % cluster_methods = {'subspace', 'spectral'};
-    % cluster_methods = {'spectral'};
     cluster_methods = {'kmeans'};
     % num_clusters=(0 5000)
     % head_types = {'best', 'random', 'worst'};
-    head_types = {'best'};
-    sync_type = 'shift';
-    % metric_types = {'graph', 'coef'};
-    metric_types = {'coef'};
-    % sigmas = [1];
-
-
-
-    %% warp
-    % warp_methods = {'na' 'dtw', 'shift', 'shift_limit', 'stretch'};
-    warp_methods = {'shift_limit'};
-    warp_opt = 'num_seg=1';
+    head_types = {'best', 'worst'};
+    merges = {'num' 'top'};
 
 
     %% evaluation
-    eval_opts = {'no_dup=1'};
-
-
-    %% rank
-    rank_seg = 1;
-    rank_percnetile = 0.8;
-    rank_cluster_method = 1;
-    rank_opt = ['percentile=' num2str(rank_percnetile) ',num_seg=' num2str(rank_seg) ',r_method=' num2str(rank_cluster_method)];
+    dups = {'no' 'best' 'avg' 'equal'};
+    % dups = {'best' 'equal'};
 
 
     % init_esti_methods = {'na', 'lens'};
@@ -57,7 +50,7 @@ function postcondor_missing()
     %% plot line: 
     %%   x axis: loss rates
     %%   lines: interpolation methods
-    compare_line_interpolation_method(input_dir, './figs_missing/', trace_names, rank_opt, elem_frac, loss_rates, elem_mode, loss_mode, burst_size, init_esti_methods, final_esti_methods, cluster_methods, head_types, sync_type, metric_types, warp_methods, warp_opt, eval_opts, seeds, 'line_interp_method');
+    compare_line_interpolation_method(input_dir, './figs_missing/', trace_names, elem_frac, loss_rates, elem_mode, loss_mode, burst_size, sync_methods, metrics, num_seg, cluster_methods, head_types, merges, dups, init_esti_methods, final_esti_methods, seeds, 'line_interp_method');
 
 end
 
@@ -68,6 +61,10 @@ function [trace_opt] = get_trace_opt(trace_name)
         trace_opt = 'subject=1,session=1,img_idx=0';
     elseif strcmp(trace_name, '4sq')
         trace_opt = 'num_loc=100,num_rep=1,loc_type=1';
+    elseif strcmp(trace_name, 'muse')
+        trace_opt = 'muse=''4ch''';
+    elseif strcmp(trace_name, 'deap')
+        trace_opt = 'video=1';
     else
         trace_opt = 'na';
     end
@@ -75,14 +72,14 @@ end
 
 
 %% get_results: function description
-function [mae_mean, mae_std] = get_results(input_dir, trace_name, trace_opt, rank_opt, elem_frac, loss_rate, elem_mode, loss_mode, burst_size, init_esti_method, final_esti_method, cluster_method, cluster_opt, warp_method, warp_opt, eval_opt, seeds)
+function [mae_mean, mae_std] = get_results(input_dir, trace_name, trace_opt, drop_opt, sync_opt, cluster_opt, eval_opt, init_esti_method, final_esti_method, seeds)
 
     cnt = 0;
-    basename = [input_dir trace_name '.' trace_opt '.' rank_opt '.elem' num2str(elem_frac) '.lr' num2str(loss_rate) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.' cluster_method '.' cluster_opt '.' warp_method '.' warp_opt '.' eval_opt];
+    basename = [input_dir trace_name '.' trace_opt '.' drop_opt '.' sync_opt '.' cluster_opt '.' eval_opt '.' init_esti_method '.' final_esti_method];
     fprintf('%s\n', basename);
 
     for seed = seeds
-        filename = [basename '.s' num2str(seed) '.txt'];
+        filename = [basename '.' num2str(seed) '.txt'];
         
         if exist(filename) ~= 0
             cnt = cnt + 1;
@@ -115,56 +112,92 @@ function [mae_mean, mae_std] = get_results(input_dir, trace_name, trace_opt, ran
 end
 
 
+function [frac, lr, elem_mode, loss_mode, burst] = get_drop_opt(opt)
+    frac = 1;
+    lr = 0.1; 
+    elem_mode = 'elem';
+    loss_mode = 'ind';
+    burst = 1;
+
+    opts = regexp(opt, ',', 'split');
+    for this_opt = opts
+        eval([char(this_opt) ';']);
+    end
+end
+
 %% ------------------------------------------
 %% compare interpolation method
-function compare_line_interpolation_method(input_dir, output_dir, trace_names, rank_opt, elem_frac, loss_rates, elem_mode, loss_mode, burst_size, init_esti_methods, final_esti_methods, cluster_methods, head_types, sync_type, metric_types, warp_methods, warp_opt, eval_opts, seeds, fig_prefix)
+function compare_line_interpolation_method(input_dir, output_dir, trace_names, elem_frac, loss_rates, elem_mode, loss_mode, burst_size, sync_methods, metrics, num_seg, cluster_methods, head_types, merges, dups, init_esti_methods, final_esti_methods, seeds, fig_prefix)
 
     
     for trace_name = trace_names
         trace_name = char(trace_name);
         trace_opt = get_trace_opt(trace_name);
 
-        for cluster_method = cluster_methods
-            cluster_method = char(cluster_method);
+        drop_opt = ['frac=' num2str(elem_frac) ',elem_mode=''' elem_mode ''',loss_mode=''' loss_mode ''',burst=' num2str(burst_size)];
 
-            if strcmp(cluster_method, 'subspace')
-                num_clusters = [5000];
-            elseif strcmp(cluster_method, 'spectral')
-                num_clusters = [-1];
-            else
-                num_clusters = [2 3 5 10];
-            end
+        for sync_method = sync_methods
+            sync_method = char(sync_method);
+
+            for metric = metrics
+                metric = char(metric);
+
+                if strcmp(metric, 'graph')
+                    sigmas = [1, 10, 100];
+                else
+                    sigmas = [1];
+                end
                 
-            for num_cluster = num_clusters
-                for head_type = head_types
-                    head_type = char(head_type);
-                    for metric_type = metric_types
-                        metric_type = char(metric_type);
+                for sigma = sigmas
 
-                        if strcmp(metric_type, 'graph')
-                            sigmas = [1 10 100];
-                        else
-                            sigmas = [1];
-                        end
-
-                        for sigma = sigmas
+                    sync_opt = ['sync=''' sync_method ''',metric=''' metric ''',num_seg=' num2str(num_seg) ',sigma=' num2str(sigma)];
                     
-                            cluster_opt = ['num_cluster=' num2str(num_cluster) ',head_type=''' head_type ''',sync_type=''' sync_type ''',metric_type=''' metric_type ''',sigma=' num2str(sigma)];
+                    for cluster_method = cluster_methods
+                        cluster_method = char(cluster_method);
 
-                            for warp_method = warp_methods
-                                warp_method = char(warp_method);
-                            
-                                for eval_opt = eval_opts
-                                    eval_opt = char(eval_opt);
+                        if strcmp(cluster_method, 'subspace')
+                            num_clusters = [5000];
+                        elseif strcmp(cluster_method, 'spectral')
+                            num_clusters = [0];
+                        else
+                            num_clusters = [1 2 4 8];
+                        end
+                
+                        for num_cluster = num_clusters
+                            for head_type = head_types
+                                head_type = char(head_type);
+                                for merge = merges
+                                    merge = char(merge);
 
-                                    for init_esti_method = init_esti_methods
-                                        init_esti_method = char(init_esti_method);
-                                        for final_esti_method = final_esti_methods
-                                            final_esti_method = char(final_esti_method);
+                                    if strcmp(merge, 'num')
+                                        threshs = [30];
+                                    elseif strcmp(merge, 'sim')
+                                        threshs = [0.5];
+                                    elseif strcmp(merge, 'top')
+                                        threshs = [1];
+                                    elseif strcmp(merge, 'na')
+                                        threshs = [0];
+                                    else
+                                        threshs = [0];
+                                    end
 
-                                            figname = [output_dir fig_prefix '.' trace_name '.' trace_opt '.' rank_opt '.elem' num2str(elem_frac) '.' elem_mode '.' loss_mode '.' num2str(burst_size) '.' init_esti_method '.' final_esti_method '.' cluster_method '.' cluster_opt '.' warp_method '.' warp_opt '.' eval_opt];
-                                            plot_line_interpolation_method(input_dir, trace_name, trace_opt, rank_opt, elem_frac, loss_rates, elem_mode, loss_mode, burst_size, init_esti_method, final_esti_method, cluster_method, cluster_opt, warp_method, warp_opt, eval_opt, seeds, figname);
+                                    for thresh = threshs
 
+                                        cluster_opt = ['method=''' cluster_method ''',num=' num2str(num_cluster) ',head=''' head_type ''',merge=''' merge ''',thresh=' num2str(thresh)];
+
+                                        for dup = dups
+                                            dup = char(dup);
+                                            eval_opt = ['dup=''' dup ''''];
+
+                                            for init_esti_method = init_esti_methods
+                                                init_esti_method = char(init_esti_method);
+                                                for final_esti_method = final_esti_methods
+                                                    final_esti_method = char(final_esti_method);
+
+                                                    figname = [output_dir fig_prefix '.' trace_name '.' trace_opt '.' drop_opt '.' sync_opt '.' cluster_opt '.' eval_opt '.' init_esti_method '.' final_esti_method];
+                                                    plot_line_interpolation_method(input_dir, trace_name, trace_opt, drop_opt, sync_opt, cluster_opt, eval_opt, init_esti_method, final_esti_method, loss_rates, seeds, figname);
+                                                end
+                                            end
                                         end
                                     end
                                 end
@@ -179,7 +212,7 @@ end
 
 
 %% plot_line_interpolation_method
-function plot_line_interpolation_method(input_dir, trace_name, trace_opt, rank_opt, elem_frac, loss_rates, elem_mode, loss_mode, burst_size, init_esti_method, final_esti_method, cluster_method, cluster_opt, warp_method, warp_opt, eval_opt, seeds, figname)
+function plot_line_interpolation_method(input_dir, trace_name, trace_opt, drop_opt, sync_opt, cluster_opt, eval_opt, init_esti_method, final_esti_method, loss_rates, seeds, figname)
 
     num_lines = 2;
 
@@ -189,6 +222,7 @@ function plot_line_interpolation_method(input_dir, trace_name, trace_opt, rank_o
     lines    = {'-', '--', '-.'};
     markers  = {'+', 'o', '*', '.', 'x', 's', 'd', '^', '>', '<', 'p', 'h'};
 
+    [elem_frac, loss_rate, elem_mode, loss_mode, burst_size] = get_drop_opt(drop_opt);
 
     % select_line = [7:-1:1];
     % legends = {'knn', 'SRMF+KNN', 'SRMF', 'SVD base+KNN', 'SVD base', ['LENS w/o ' warp_method], ['LENS w/ ' warp_method]};
@@ -197,14 +231,15 @@ function plot_line_interpolation_method(input_dir, trace_name, trace_opt, rank_o
     % select_line = [5 2 1];
     % legends = {'SRMF', ['LENS w/o ' warp_method], ['LENS w/ ' warp_method]};
     select_line = [2 1];
-    legends = {['LENS w/o ' warp_method], ['LENS w/ ' warp_method]};
+    legends = {['LENS w/o sync'], ['LENS w/ sync']};
 
     ret_mean = zeros(num_lines, length(loss_rates));
     ret_std  = zeros(num_lines, length(loss_rates));
     for li = 1:length(loss_rates)
         loss_rate = loss_rates(li);
+        drop_opt = ['frac=' num2str(elem_frac) ',lr=' num2str(loss_rate) ',elem_mode=''' elem_mode ''',loss_mode=''' loss_mode ''',burst=' num2str(burst_size)];
         
-        [mae_mean, mae_std] = get_results(input_dir, trace_name, trace_opt, rank_opt, elem_frac, loss_rate, elem_mode, loss_mode, burst_size, init_esti_method, final_esti_method, cluster_method, cluster_opt, warp_method, warp_opt, eval_opt, seeds);
+        [mae_mean, mae_std] = get_results(input_dir, trace_name, trace_opt, drop_opt, sync_opt, cluster_opt, eval_opt, init_esti_method, final_esti_method, seeds);
         if(length(mae_mean) > 0)
             ret_mean(:, li) = mae_mean;
             ret_std(:, li) = mae_std;
@@ -245,6 +280,7 @@ function plot_line_interpolation_method(input_dir, trace_name, trace_opt, rank_o
     print(fh, '-depsc', [figname '.eps']);
 
 end
+
 %% END compare interpolation method
 %% ------------------------------------------
     

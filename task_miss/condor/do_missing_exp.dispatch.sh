@@ -6,7 +6,8 @@ num_jobs=70
 cnt=0
 
 ## clean log files
-rm /u/yichao/warp/condor_data/task_miss/condor/log_missing/*
+rm -rf /u/yichao/warp/condor_data/task_miss/condor/log_missing
+mkdir /u/yichao/warp/condor_data/task_miss/condor/log_missing
 
 ## DAG 
 rm tmp.$func.dag*
@@ -14,9 +15,11 @@ echo "" > tmp.$func.dag
 
 
 ## trace
-# trace_names=("abilene" "geant" "wifi" "3g" "1ch-csi" "cister" "cu" "ucsb" "umich" "p300" "4sq")
-trace_names=("3g" "4sq" "geant")
-# "test_sine_shift" "test_sine_scale" "blink" "multi-ch-csi"
+# trace_names=("abilene" "geant" "wifi" "3g" "1ch-csi" "cister" "cu" "ucsb" "umich" "p300" "4sq" "deap" "muse" "multi-ch-csi")
+# trace_names=("muse" "p300" "deap" "wifi" "1ch-csi" "abilene" "umich" "cister" "multi-ch-csi")
+trace_names=("abilene" "geant" "wifi" "3g" "1ch-csi" "cister" "cu" "ucsb" "umich" "p300" "4sq" "deap" "muse" "multi-ch-csi")
+# trace_names=("multi-ch-csi")
+# "test_sine_shift" "test_sine_scale" "blink" 
 
 
 ## dropping elements
@@ -43,14 +46,14 @@ head_types=("best" "worst")
 merges=("num" "top")
 
 ## evaluation
-dups=("no" "best" "avg")
+dups=("no" "best" "avg" "equal")
 
 # init_esti_methods=("na" "lens")
 init_esti_methods=("na")
 final_esti_methods=("lens")
 
 # seeds=(1 2 3 4 5)
-seeds=(1 2)
+seeds=(3)
 
 
 for seed in ${seeds[@]}; do
@@ -60,6 +63,10 @@ for seed in ${seeds[@]}; do
             trace_opt="subject=1,session=1,img_idx=0"
         elif [[ ${trace_name} == "4sq" ]]; then
             trace_opt="num_loc=100,num_rep=1,loc_type=1"
+        elif [[ ${trace_name} == "deap" ]]; then
+            trace_opt="video=1"
+        elif [[ ${trace_name} == "muse" ]]; then
+            trace_opt="muse=''4ch''"
         else
             trace_opt="na"
         fi
@@ -92,7 +99,7 @@ for seed in ${seeds[@]}; do
                             elif [[ ${cluster_method} == "spectral" ]]; then
                                 num_clusters=(0)
                             else
-                                num_clusters=(2 3 5 10)
+                                num_clusters=(1 2 4 8)
                             fi
 
                             ## number of clusters

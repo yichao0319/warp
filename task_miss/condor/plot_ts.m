@@ -11,7 +11,7 @@ function plot_ts(ts, figname, range)
 
     lc = 0;
     max_grp = 2;
-    max_line = 5;
+    max_line = 50;
     for tsi = 1:length(ts)
         if tsi > max_grp, break; end
 
